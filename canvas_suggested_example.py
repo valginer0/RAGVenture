@@ -7,12 +7,15 @@ import langchain
 import langsmith
 from langchain_community.vectorstores import FAISS
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.retrievers import VectorStoreRetriever
+from langchain_core.vectorstores import VectorStoreRetriever
 
 # Load the dataset from Kaggle (assuming you've already downloaded it)
 # data_path = "y_combinator_startups.csv"
-data_path = "yc_startups.json"
-df = pd.read_csv(data_path)
+file_path = "./yc_startups.json"
+df = pd.read_json(file_path).head(5)
+df = df[['long_desc']]
+df.drop_duplicates(subset=['long_desc'], inplace=True)
+df = df[df['long_desc'].notna()]
 
 # Display the first few rows of the dataframe to understand the data
 print("Loaded Data:")
@@ -20,7 +23,8 @@ print(df.head())
 
 # Extracting relevant data columns for analysis
 # Assuming columns such as 'Startup Name', 'Description', 'Funding', 'Sector', etc.
-startup_data = df[['Startup Name', 'Description', 'Funding', 'Sector']]
+# startup_data = df[['Startup Name', 'Description', 'Funding', 'Sector']]
+startup_data = df[['long_desc']]
 
 # Setting up LangChain and LangSmith
 # Initialize LangSmith for natural language processing
