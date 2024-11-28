@@ -10,7 +10,6 @@ LANGCHAIN_PROJECT="the name of your langsmith project"
 
 import logging
 import time
-from functools import wraps
 from typing import List, Tuple, Optional, Any
 import pandas as pd
 from langchain.docstore.document import Document
@@ -27,6 +26,7 @@ from src.rag_startups.core.rag_chain import format_startup_idea, initialize_rag
 from src.rag_startups.core.startup_metadata import StartupLookup
 from src.rag_startups.data.loader import create_documents, split_documents, StartupLookup
 from src.rag_startups.utils.spinner import Spinner
+from src.rag_startups.utils.timing import timing_decorator
 
 # Configure logging to suppress batch processing messages
 logging.getLogger('sentence_transformers').setLevel(logging.WARNING)
@@ -39,22 +39,10 @@ class CustomEmbeddingFunction:
         self.model = model
 
     def embed_documents(self, texts):
-        return [self.model.encode(text) for text in texts]
+        return self.model.encode(texts)
 
     def embed_query(self, text):
         return self.model.encode(text)
-
-
-def timing_decorator(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        start_time = time.time()
-        result = func(*args, **kwargs)
-        end_time = time.time()
-        logging.info(f"{func.__name__} took {end_time - start_time:.2f} seconds")
-        return result
-
-    return wrapper
 
 
 @timing_decorator
