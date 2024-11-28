@@ -1,0 +1,10 @@
+Company Name,Description,Category,Batch
+Airbnb,"Founded in August of 2008 and based in San Francisco, California, Airbnb is a trusted community marketplace for people to list, discover, and book unique accommodations around the world.",Marketplace,S08
+Dropbox,"Dropbox is a file hosting service that offers cloud storage, file synchronization, and client software.",Enterprise Software,S07
+EMPTY_DESC,,AI/ML,W21
+,"No company name here",Software,S22
+Stripe,"Stripe is a technology company that builds economic infrastructure for the internet. Businesses of every size use our software to accept payments and manage their businesses online.",Fintech,S09
+Weird
+Description,"This description
+has multiple
+lines",Other,W20

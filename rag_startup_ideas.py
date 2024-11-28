@@ -11,8 +11,13 @@ LANGCHAIN_PROJECT="the name of your langsmith project"
 from embed_master import calculate_result
 
 if __name__ == '__main__':
-    # model_name = 'all-MiniLM-L6-v2'
-    question = "Generate a company idea for the Real Estate based on provided context"
+    import sys
+    if len(sys.argv) < 2:
+        print("Please provide an industry. Example: python rag_startup_ideas.py AI")
+        sys.exit(1)
+        
+    industry = sys.argv[1]
+    question = f"Generate a company idea for the {industry} industry based on provided context"
     file_path = './yc_startups.json'
     prompt_messages = [
         ("system", """

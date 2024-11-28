@@ -11,7 +11,7 @@ LANGCHAIN_PROJECT="the name of your langsmith project"
 import logging
 import time
 from functools import wraps
-
+from typing import List, Tuple, Optional, Any
 import pandas as pd
 from langchain.docstore.document import Document
 from langchain_chroma import Chroma
@@ -20,9 +20,17 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langsmith import traceable
 from sentence_transformers import SentenceTransformer
 from transformers import pipeline
+import json
 
-from settings import local_language_model_name, limitation_of_number_of_lines
+from settings import local_language_model_name
+from src.rag_startups.core.rag_chain import format_startup_idea, initialize_rag
+from src.rag_startups.core.startup_metadata import StartupLookup
+from src.rag_startups.data.loader import create_documents, split_documents, StartupLookup
+from src.rag_startups.utils.spinner import Spinner
 
+# Configure logging to suppress batch processing messages
+logging.getLogger('sentence_transformers').setLevel(logging.WARNING)
+logging.getLogger('chromadb').setLevel(logging.WARNING)
 logging.basicConfig(level=logging.INFO)
 
 
@@ -50,27 +58,9 @@ def timing_decorator(func):
 
 
 @timing_decorator
-def load_data(file_path: str, limitation_of_number_of_lines):
-    try:
-        df = pd.read_json(file_path).head(limitation_of_number_of_lines)
-        df = df[['long_desc']]
-        df.drop_duplicates(subset=['long_desc'], inplace=True)
-        df = df[df['long_desc'].notna()]
-        return df
-    except ValueError as e:
-        logging.error(f"Error loading data: The file might not be in valid JSON format. Details: {e}")
-    except FileNotFoundError as e:
-        logging.error(f"Error loading data: File not found. Details: {e}")
-    except Exception as e:
-        logging.error(f"Error loading data: {e}")
-    return pd.DataFrame()
-
-
-@timing_decorator
 def create_and_split_document(df: pd.DataFrame):
-    docs = [Document(page_content=row['long_desc']) for _, row in df.iterrows()]
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    return text_splitter.split_documents(docs)
+    docs = create_documents(df)
+    return split_documents(docs)
 
 
 @timing_decorator
@@ -94,44 +84,86 @@ def setup_retriever(vectorstore):
         return None
 
 
+@timing_decorator
+def initialize_embeddings(df: pd.DataFrame, model_name: str = 'all-MiniLM-L6-v2'):
+    """Initialize embeddings and retriever. This should be called once at startup."""
+    splits = create_and_split_document(df)
+    if not splits:
+        raise ValueError("Failed to split documents.")
+
+    print("\nInitializing embeddings for faster startup idea generation...")
+    with Spinner("Computing embeddings and setting up retriever"):
+        vectorstore = embed(splits, model_name)
+        if vectorstore is None:
+            raise ValueError("Failed to create vectorstore.")
+
+        retriever = setup_retriever(vectorstore)
+        if retriever is None:
+            raise ValueError("Failed to set up retriever.")
+    print("Initialization complete!\n")
+        
+    return retriever
+
+
 def get_prompt_content(prompt, question, context_docs):
     formatted_context = "\n\n".join(doc.page_content for doc in context_docs)
     prompt_input = prompt.format_messages(question=question, context=formatted_context)
     return prompt_input[0].content
 
 
-@traceable
 @timing_decorator
-def rag_chain_local(question, generator, prompt, retriever):
+def rag_chain_local(question, generator, prompt, retriever, lookup=None, num_ideas=3):
     try:
         context_docs = retriever.invoke(question)
-        prompt_content = get_prompt_content(prompt, question, context_docs)
-        return \
-        generator(prompt_content, max_new_tokens=50, num_return_sequences=1, pad_token_id=50256, truncation=True)[0][
-            'generated_text']
+        formatted_ideas = []
+        seen_companies = set()
+        
+        for doc in context_docs:
+            # Format the idea using the correct function
+            sections = format_startup_idea(doc.page_content, retriever, lookup)
+            
+            # Skip if we've already seen this company
+            if sections['Company'] in seen_companies:
+                continue
+                
+            seen_companies.add(sections['Company'])
+            
+            # Format the idea with proper sections
+            formatted_idea = f"\n{'='*50}\nStartup Idea #{len(formatted_ideas)+1}:\n"
+            formatted_idea += f"Company: {sections['Company']}\n\n"
+            formatted_idea += f"PROBLEM/OPPORTUNITY:\n{sections['Problem']}\n\n"
+            formatted_idea += f"SOLUTION:\n{sections['Solution']}\n\n"
+            formatted_idea += f"TARGET MARKET:\n{sections['Market']}\n\n"
+            formatted_idea += f"UNIQUE VALUE:\n{sections['Value']}"
+            
+            formatted_ideas.append(formatted_idea)
+            
+            # Stop after num_ideas unique companies
+            if len(formatted_ideas) >= num_ideas:
+                break
+        
+        return "Here are the most relevant startup ideas from YC companies:\n" + "\n".join(formatted_ideas)
     except Exception as e:
         logging.error(f"Error in RAG chain: {e}")
         return ""
 
 
-def calculate_result(question, file_path, prompt_messages, model_name='all-MiniLM-L6-v2', limitation_of_number_of_lines=500_000):
-    df = load_data(file_path, limitation_of_number_of_lines)
-    if df.empty:
-        return "Error: Failed to load data."
-
-    splits = create_and_split_document(df)
-    if not splits:
-        return "Error: Failed to split documents."
-
-    vectorstore = embed(splits, model_name)
-    if vectorstore is None:
-        return "Error: Failed to create vectorstore."
-
-    retriever = setup_retriever(vectorstore)
-    if retriever is None:
-        return "Error: Failed to set up retriever."
+@timing_decorator
+def calculate_result(
+    question: str,
+    retriever: Any,
+    json_data: list,
+    prompt_messages: List[Tuple[str, str]],
+    model_name: str = 'all-MiniLM-L6-v2',
+    lookup: Optional[StartupLookup] = None,
+    num_ideas: int = 3
+) -> str:
+    """Calculate result using the RAG pipeline."""
+    # Initialize lookup if not provided
+    if lookup is None:
+        lookup = StartupLookup(json_data)
 
     generator = pipeline("text-generation", model=local_language_model_name, pad_token_id=50256)
     prompt = ChatPromptTemplate.from_messages(prompt_messages)
-    result = rag_chain_local(question, generator, prompt, retriever)
+    result = rag_chain_local(question, generator, prompt, retriever, lookup=lookup, num_ideas=num_ideas)
     return result

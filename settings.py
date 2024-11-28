@@ -3,6 +3,9 @@
 # Name of the language model to be used for text generation.
 local_language_model_name = 'gpt2'
 
+# Maximum number of lines to process from the dataset
+limitation_of_number_of_lines = 500_000
+
 
 # Below are examples of possible prompt, question amd dataset:
 # prompt_messages = [
