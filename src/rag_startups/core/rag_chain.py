@@ -17,47 +17,57 @@ from config.config import (
 
 # Common words that should not be considered company names
 COMMON_WORDS = {
-    # Articles and basic words
-    'the', 'a', 'an', 'and', 'or', 'but', 'if', 'in', 'on', 'at', 'by', 'to', 'for',
-    # Pronouns
-    'we', 'i', 'you', 'they', 'it', 'he', 'she',
-    # Common verbs
-    'help', 'provide', 'get', 'use', 'make', 'build', 'create', 'start', 'learn', 'work',
-    'exists', 'is', 'are', 'was', 'be',
-    # Product/service words
-    'platform', 'solution', 'service', 'product', 'company', 'business', 'startup',
-    'software', 'desk', 'system', 'tool', 'app', 'application',
-    # Other common words
-    'that', 'this', 'what', 'which', 'new', 'first', 'best'
+    # Common sentence starters that aren't company names
+    'founded', 'since', 'the', 'help', 'platform', 'we', 'i', 'this', 'that',
+    'these', 'those', 'it', 'they', 'he', 'she', 'you', 'my', 'our', 'your',
+    'their', 'his', 'her', 'its', 'there', 'here', 'where', 'when', 'why',
+    'who', 'what', 'how', 'which', 'while', 'if', 'unless', 'until', 'though',
+    'although', 'because', 'since', 'for', 'as', 'with', 'by', 'from', 'about',
+    'like', 'through', 'after', 'before', 'to', 'and', 'but', 'or', 'yet', 'so',
+    'at', 'in', 'on', 'upon', 'of',
 }
 
 def extract_company_name(text):
-    """Extract company name from the first sentence, with better filtering."""
+    """Extract company name from text."""
     if not text:
         return ""
+
+    # Split into words and get first two words
+    words = text.strip().split()
+    if not words:
+        return ""
+
+    # Check if first word is a common starter word
+    if words[0].lower() in COMMON_WORDS:
+        # Skip to next word after common starter
+        words = words[1:]
+        if not words:  # If no more words after skipping
+            return ""
+
+    # Get potential company name (could be multiple words)
+    company_parts = []
+    for word in words:
+        # Stop if we hit a lowercase word or common word
+        if not word[0].isupper() or word.lower() in COMMON_WORDS:
+            break
+        company_parts.append(word)
+        
+        # Stop after collecting parts if next word is "is" or common joining word
+        next_idx = len(company_parts)
+        if next_idx < len(words) and words[next_idx].lower() in {'is', 'was', 'are', 'helps', 'exists'}:
+            break
+
+    if not company_parts:
+        return ""
+
+    # Join multi-word company names
+    company = " ".join(company_parts)
     
-    # Split into words and look for first word that could be a company name
-    words = text.split()
-    
-    # Check first word specially - most company names appear first
-    if words and len(words[0]) > 1:
-        clean_word = words[0].strip('.,!?:;"\'').strip()
-        if (clean_word and 
-            clean_word.lower() not in COMMON_WORDS and
-            not clean_word.lower().startswith('help') and  # Special case for "help desk" etc.
-            clean_word[0].isupper()):  # Company names start with uppercase
-            return clean_word
-    
-    # If first word wasn't a company name, check second word only if first word is "the"
-    if len(words) > 1 and words[0].lower() == 'the':
-        clean_word = words[1].strip('.,!?:;"\'').strip()
-        if (clean_word and 
-            clean_word.lower() not in COMMON_WORDS and
-            not clean_word.lower().startswith('help') and
-            clean_word[0].isupper()):
-            return clean_word
-            
-    return ""
+    # Validate company name
+    if len(company) <= 1 or company.lower() in COMMON_WORDS:
+        return ""
+
+    return company
 
 def format_value_details(value_details):
     """Format value details, handling quotes and bullet points."""
@@ -101,21 +111,9 @@ def format_startup_idea(content: str) -> dict:
         # Try extracting from second part if first part failed
         company_name = extract_company_name(parts[1])
     
-    # Get main description by removing company name
-    main_desc = description
-    if company_name:
-        # Remove company name while preserving the rest of the sentence
-        main_desc = description.replace(company_name, "", 1).strip()
-        if main_desc.startswith('exists to '):
-            main_desc = f"{company_name} {main_desc}"
+    # Get main description
+    main_desc = description.rstrip(".") + "."
     
-    # Fix descriptions that start with verbs by adding subject
-    if main_desc.lower().startswith(('help', 'provide', 'create', 'build', 'make', 'is')):
-        main_desc = f"{company_name} {main_desc}" if company_name else main_desc
-    
-    # Remove "Link exists" and similar phrases from start
-    main_desc = re.sub(r'^(link exists|exists)\s+to\s+', '', main_desc, flags=re.IGNORECASE)
-        
     # Analyze the remaining parts for additional details
     remaining_text = ". ".join(parts[1:]).strip()
     
@@ -148,7 +146,6 @@ def format_startup_idea(content: str) -> dict:
         value_details = solution_details if solution_details else main_desc
     
     # Ensure proper sentence endings
-    main_desc = main_desc.rstrip(".") + "."
     solution_details = solution_details.rstrip(".") + "." if solution_details else f"Provides innovative solutions for {target_market.lower()}"
     target_market = target_market.rstrip(".") + "."
     

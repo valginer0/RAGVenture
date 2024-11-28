@@ -21,12 +21,12 @@ print("-" * 50)
 for text in test_cases:
     company = extract_company_name(text)
     print(f"\nInput: {text}")
-    print(f"Extracted company: '{company}'")
+    print(f"Extracted company: {repr(company) if company else '[No company name found]'}")
 
 print("\n\nTesting full format_startup_idea():")
 print("-" * 50)
 for text in test_cases:
     result = format_startup_idea(text)
     print(f"\nInput: {text}")
-    print(f"Company: '{result['Company']}'")
-    print(f"Problem: '{result['Problem']}'")
+    print(f"Company: {repr(result['Company']) if result['Company'] else '[No company name found]'}")
+    print(f"Problem: {result['Problem']}")
