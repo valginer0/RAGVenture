@@ -23,9 +23,12 @@ class StartupLookup:
         return list(self._name_to_data.keys())
     
     def get_by_description(self, description: str) -> Optional[Dict]:
-        """Get startup data by matching description."""
+        """Get startup data by matching long description."""
+        if not description:
+            return None
+        
         description = description.lower()
         for startup in self.startup_data:
-            if startup.get('description', '').lower() == description:
+            if startup.get('long_desc', '').lower() == description:
                 return startup
         return None

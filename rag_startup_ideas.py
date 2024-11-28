@@ -8,17 +8,43 @@ LANGCHAIN_PROJECT="the name of your langsmith project"
 
 """
 
-from embed_master import calculate_result
+import argparse
+from embed_master import calculate_result, initialize_embeddings
+from src.rag_startups.data.loader import load_data, StartupLookup
+from src.rag_startups.core.startup_metadata import StartupLookup
+from src.rag_startups.utils.output_formatter import formatter
+
+def parse_arguments():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description='Generate startup ideas using RAG')
+    
+    # Required arguments
+    parser.add_argument('--industry', type=str, required=True,
+                      help='Industry to generate startup ideas for')
+    
+    # Optional arguments
+    parser.add_argument('--file', type=str, default='yc_startups.json',
+                       help='Path to the JSON file containing startup data')
+    parser.add_argument('--max-lines', type=int, default=None,
+                       help='Maximum number of lines to process')
+    parser.add_argument('--num-ideas', type=int, default=3,
+                       help='Number of startup ideas to generate')
+    
+    # Future extensibility (commented out for now)
+    # parser.add_argument('--chunk-size', type=int, default=1000,
+    #                    help='Size of text chunks for processing')
+    # parser.add_argument('--chunk-overlap', type=int, default=200,
+    #                    help='Overlap between text chunks')
+    # parser.add_argument('--model', type=str, default='all-MiniLM-L6-v2',
+    #                    help='Model to use for embeddings')
+    
+    return parser.parse_args()
 
 if __name__ == '__main__':
-    import sys
-    if len(sys.argv) < 2:
-        print("Please provide an industry. Example: python rag_startup_ideas.py AI")
-        sys.exit(1)
-        
-    industry = sys.argv[1]
-    question = f"Generate a company idea for the {industry} industry based on provided context"
-    file_path = './yc_startups.json'
+    args = parse_arguments()
+    
+    question = f"Generate a company idea for the {args.industry} industry based on provided context"
+    
     prompt_messages = [
         ("system", """
             You are an assistant for question-answering tasks.
@@ -30,5 +56,25 @@ if __name__ == '__main__':
             Answer:""")
     ]
 
-    result = calculate_result(question, file_path, prompt_messages)
-    print(result)
+    # Load data once and get both DataFrame and JSON data
+    df, json_data = load_data(args.file, args.max_lines)
+    
+    # Initialize lookup with the JSON data
+    lookup = StartupLookup(json_data)
+    
+    # Initialize embeddings and retriever once
+    retriever = initialize_embeddings(df)
+    
+    # Pass retriever to calculate_result
+    result = calculate_result(
+        question=question,
+        retriever=retriever,
+        json_data=json_data,
+        prompt_messages=prompt_messages,
+        lookup=lookup,
+        num_ideas=args.num_ideas
+    )
+    
+    # Print the results in a nicely formatted way
+    formatter.print_startup_ideas(result)
+    formatter.print_summary()

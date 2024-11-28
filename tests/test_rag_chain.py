@@ -11,6 +11,7 @@ from transformers import pipeline
 sys.path.append(str(Path(__file__).parent.parent))
 
 from embed_master import create_and_split_document, embed, setup_retriever, rag_chain_local
+from src.rag_startups.core.startup_metadata import StartupLookup
 from settings import local_language_model_name
 
 def test_create_and_split_document():
@@ -106,3 +107,82 @@ def test_rag_chain_local():
     assert result is not None
     assert isinstance(result, str)
     assert len(result.strip()) > 0  # Should not be empty
+
+@pytest.fixture
+def sample_startup_data():
+    """Sample startup data for testing."""
+    return [
+        {
+            'name': 'AI Company',
+            'description': 'An AI company that does machine learning.',
+            'long_desc': 'An AI company that does machine learning. Using cutting-edge algorithms to solve complex problems. Targeting enterprise customers.',
+            'industry': 'AI'
+        },
+        {
+            'name': 'Blockchain Startup',
+            'description': 'A blockchain company for secure transactions.',
+            'long_desc': 'A blockchain company for secure transactions. Providing decentralized solutions for financial services. Focused on institutional clients.',
+            'industry': 'Blockchain'
+        }
+    ]
+
+@pytest.fixture
+def sample_startup_lookup(sample_startup_data):
+    """Sample StartupLookup instance for testing."""
+    return StartupLookup(sample_startup_data)
+
+def test_rag_chain_with_lookup(sample_startup_lookup):
+    """Test RAG chain with startup lookup integration."""
+    # Create test documents with long_desc
+    docs = [
+        Document(page_content="An AI company that does machine learning. Using cutting-edge algorithms to solve complex problems. Targeting enterprise customers."),
+        Document(page_content="A blockchain company for secure transactions. Providing decentralized solutions for financial services. Focused on institutional clients.")
+    ]
+    
+    # Create vectorstore and retriever
+    vectorstore = embed(docs, model_name='all-MiniLM-L6-v2')
+    retriever = setup_retriever(vectorstore)
+    
+    # Create generator and prompt
+    generator = pipeline("text-generation", model=local_language_model_name, pad_token_id=50256)
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "Generate a startup idea based on: {context}")
+    ])
+    
+    # Test RAG chain with lookup
+    result = rag_chain_local(
+        "Generate an AI startup idea",
+        generator,
+        prompt,
+        retriever,
+        lookup=sample_startup_lookup
+    )
+    
+    assert result is not None
+    assert isinstance(result, str)
+    assert len(result) > 0
+
+def test_format_startup_idea_with_lookup(sample_startup_lookup):
+    """Test formatting startup ideas with lookup."""
+    from src.rag_startups.core.rag_chain import format_startup_idea
+    
+    # Create test documents and retriever with long_desc
+    docs = [Document(page_content="An AI company that does machine learning. Using cutting-edge algorithms to solve complex problems. Targeting enterprise customers.")]
+    vectorstore = embed(docs, model_name='all-MiniLM-L6-v2')
+    retriever = setup_retriever(vectorstore)
+    
+    # Test formatting with lookup
+    result = format_startup_idea(
+        "An AI company that does machine learning. Using cutting-edge algorithms to solve complex problems. Targeting enterprise customers.",
+        retriever,
+        startup_lookup=sample_startup_lookup
+    )
+    
+    assert result is not None
+    assert isinstance(result, dict)
+    assert 'Company' in result
+    assert 'Problem' in result
+    assert 'Solution' in result
+    assert 'Market' in result
+    assert 'Value' in result
+    assert result['Company'] == 'AI Company'  # Should match the lookup data

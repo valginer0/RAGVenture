@@ -1,14 +1,15 @@
 """Timing decorator for performance monitoring."""
 import functools
-import logging
 import time
+import logging
+from ..utils.output_formatter import formatter
 from typing import Any, Callable
 
 logger = logging.getLogger(__name__)
 
 def timing_decorator(func: Callable) -> Callable:
     """
-    Decorator to measure and log the execution time of functions.
+    Decorator to measure and log execution time of functions.
     
     Args:
         func: Function to be timed
@@ -21,9 +22,10 @@ def timing_decorator(func: Callable) -> Callable:
         start_time = time.time()
         result = func(*args, **kwargs)
         end_time = time.time()
+        duration = end_time - start_time
         
-        logger.info(
-            f"{func.__name__} took {end_time - start_time:.2f} seconds"
-        )
+        # Add timing to our formatter
+        formatter.add_timing(func.__name__, duration)
+        
         return result
     return wrapper

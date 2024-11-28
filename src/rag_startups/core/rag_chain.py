@@ -51,10 +51,10 @@ def format_startup_idea(description: str, retriever: Any, startup_lookup: Option
     similar_desc = get_similar_description(description, retriever)
     
     # Get metadata if we found a similar description and have a lookup
-    metadata = startup_lookup.get_metadata(similar_desc) if (similar_desc and startup_lookup) else None
+    metadata = startup_lookup.get_by_description(similar_desc) if (similar_desc and startup_lookup) else None
     
     # Use actual company name from metadata if available
-    company_name = metadata.name if metadata else ""
+    company_name = metadata['name'] if metadata else ""
     
     # Clean and join lines, removing empty ones
     lines = [line.strip() for line in description.split("\n") if line.strip()]
@@ -181,52 +181,3 @@ def rag_chain_local(
         
     except Exception as e:
         raise ModelError(f"Error in RAG chain execution: {str(e)}")
-
-@timing_decorator
-def calculate_result(
-    question: str,
-    file_path: str,
-    prompt_messages: List[Tuple[str, str]],
-    model_name: str = LOCAL_LANGUAGE_MODEL,
-    max_lines: Optional[int] = MAX_LINES
-) -> str:
-    """
-    Calculate result using the RAG pipeline.
-    
-    Args:
-        question: User's question
-        file_path: Path to the data file
-        prompt_messages: List of prompt message tuples
-        model_name: Name of the language model
-        max_lines: Maximum number of lines to process
-        
-    Returns:
-        Generated answer
-        
-    Raises:
-        Various exceptions from component functions
-    """
-    # Load and process data
-    df = load_data(file_path, max_lines)
-    docs = create_documents(df)
-    splits = split_documents(docs)
-    
-    # Create vector store and retriever
-    texts = [doc.page_content for doc in splits]
-    vectorstore = create_vectorstore(texts)
-    retriever = setup_retriever(vectorstore)
-    
-    # Set up language model
-    try:
-        generator = pipeline(
-            'text-generation',
-            model=model_name
-        )
-    except Exception as e:
-        raise ModelError(f"Failed to load language model: {e}")
-    
-    # Get prompt template from messages
-    prompt_template = prompt_messages[0][1] if prompt_messages else DEFAULT_PROMPT_TEMPLATE
-    
-    # Execute RAG chain
-    return rag_chain_local(question, generator, prompt_template, retriever)
