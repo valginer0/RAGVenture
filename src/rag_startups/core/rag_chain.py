@@ -17,9 +17,18 @@ from config.config import (
 
 # Common words that should not be considered company names
 COMMON_WORDS = {
-    'the', 'a', 'an', 'and', 'or', 'but', 'help', 'link', 'we', 'i', 'you', 'they',
-    'provide', 'get', 'use', 'make', 'build', 'create', 'start', 'learn', 'work',
-    'platform', 'solution', 'service', 'product', 'company', 'business', 'startup'
+    # Articles and basic words
+    'the', 'a', 'an', 'and', 'or', 'but', 'if', 'in', 'on', 'at', 'by', 'to', 'for',
+    # Pronouns
+    'we', 'i', 'you', 'they', 'it', 'he', 'she',
+    # Common verbs
+    'help', 'provide', 'get', 'use', 'make', 'build', 'create', 'start', 'learn', 'work',
+    'exists', 'is', 'are', 'was', 'be',
+    # Product/service words
+    'platform', 'solution', 'service', 'product', 'company', 'business', 'startup',
+    'software', 'desk', 'system', 'tool', 'app', 'application',
+    # Other common words
+    'that', 'this', 'what', 'which', 'new', 'first', 'best'
 }
 
 def extract_company_name(text):
@@ -29,14 +38,25 @@ def extract_company_name(text):
     
     # Split into words and look for first word that could be a company name
     words = text.split()
-    for word in words[:3]:  # Only look in first 3 words
-        # Clean the word
-        clean_word = word.strip('.,!?:;"\'').strip()
+    
+    # Check first word specially - most company names appear first
+    if words and len(words[0]) > 1:
+        clean_word = words[0].strip('.,!?:;"\'').strip()
         if (clean_word and 
             clean_word.lower() not in COMMON_WORDS and
-            len(clean_word) > 1):
+            not clean_word.lower().startswith('help') and  # Special case for "help desk" etc.
+            clean_word[0].isupper()):  # Company names start with uppercase
             return clean_word
     
+    # If first word wasn't a company name, check second word only if first word is "the"
+    if len(words) > 1 and words[0].lower() == 'the':
+        clean_word = words[1].strip('.,!?:;"\'').strip()
+        if (clean_word and 
+            clean_word.lower() not in COMMON_WORDS and
+            not clean_word.lower().startswith('help') and
+            clean_word[0].isupper()):
+            return clean_word
+            
     return ""
 
 def format_value_details(value_details):
@@ -75,23 +95,24 @@ def format_startup_idea(content: str) -> dict:
     parts = content.split(".")
     description = parts[0].strip()
     
-    # Try to extract company name and main description
-    words = description.split()
-    company_name = words[0]
+    # Extract company name using the improved function
+    company_name = extract_company_name(description)
+    if not company_name and len(parts) > 1:
+        # Try extracting from second part if first part failed
+        company_name = extract_company_name(parts[1])
     
-    # Verify if first word looks like a company name (not a common verb or pronoun)
-    common_words = {'we', 'they', 'help', 'it', 'this', 'that', 'i', 'he', 'she', 'link', 'true'}
-    if company_name.lower() in common_words and len(words) > 1:
-        # Try next word as company name
-        company_name = words[1]
-        main_desc = " ".join(words[2:]).strip()
-    else:
-        main_desc = " ".join(words[1:]).strip()
-            
+    # Get main description by removing company name
+    main_desc = description
+    if company_name:
+        # Remove company name while preserving the rest of the sentence
+        main_desc = description.replace(company_name, "", 1).strip()
+        if main_desc.startswith('exists to '):
+            main_desc = f"{company_name} {main_desc}"
+    
     # Fix descriptions that start with verbs by adding subject
     if main_desc.lower().startswith(('help', 'provide', 'create', 'build', 'make', 'is')):
-        main_desc = f"{company_name} {main_desc}"
-        
+        main_desc = f"{company_name} {main_desc}" if company_name else main_desc
+    
     # Remove "Link exists" and similar phrases from start
     main_desc = re.sub(r'^(link exists|exists)\s+to\s+', '', main_desc, flags=re.IGNORECASE)
         
