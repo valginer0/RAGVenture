@@ -41,6 +41,8 @@ def initialize_rag(df: pd.DataFrame, json_data: list):
 
 def get_similar_description(description: str, retriever: Any) -> Optional[str]:
     """Get most similar description from the vector store."""
+    if not retriever:
+        return None
     if not description:
         return None
 
@@ -52,8 +54,8 @@ def format_startup_idea(
     description: str, retriever: Any, startup_lookup: Optional[Any] = None
 ) -> dict:
     """Format a startup description into a structured format."""
-    # Get similar description from RAG
-    similar_desc = get_similar_description(description, retriever)
+    # Get similar description from RAG if retriever is available
+    similar_desc = get_similar_description(description, retriever) if retriever else None
 
     # Get metadata if we found a similar description and have a lookup
     metadata = (
