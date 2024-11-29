@@ -2,7 +2,7 @@
 from typing import List, Union, Any
 
 import numpy as np
-from langchain_chroma import Chroma
+from langchain_community.vectorstores.chroma import Chroma
 from sentence_transformers import SentenceTransformer
 
 from ..utils.exceptions import EmbeddingError
