@@ -1,18 +1,46 @@
 # RAGVenture
+[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3110/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![LangChain](https://img.shields.io/badge/powered%20by-LangChain-blue.svg)](https://github.com/hwchase17/langchain)
+[![Sentence Transformers](https://img.shields.io/badge/powered%20by-Sentence%20Transformers-blue.svg)](https://www.sbert.net/)
 
-RAGVenture is an intelligent startup analysis tool powered by Retrieval-Augmented Generation (RAG). It helps users explore, understand, and analyze startup companies by combining the power of large language models with precise information retrieval.
+RAGVenture is an intelligent startup analysis tool powered by Retrieval-Augmented Generation (RAG). It helps users explore, understand, and analyze startup companies by combining the power of large language models with precise information retrieval:
+
+- 🎯 **Data-Driven**: Uses real startup data to ground its analysis and suggestions
+- 🔍 **Context-Aware**: Understands and leverages patterns from successful startups
+- 💡 **Intelligent**: Combines LLM capabilities with precise information retrieval
+- 🆓 **Cost-Effective**: Runs entirely locally with no API costs
+
+## 🎯 Why RAGVenture?
+
+Traditional startup analysis tools either rely on expensive API calls or lack real-world context. RAGVenture solves this by:
+1. Using local models (no API costs)
+2. Grounding analysis in real startup data
+3. Providing similar company analysis
+4. Running entirely on your machine
 
 ## 🚀 Features
 
 - **Smart Startup Analysis**: Analyze startup descriptions and extract key information using advanced RAG technology
 - **Intelligent Metadata Extraction**: Automatically identify and extract company names, categories, and other metadata
 - **Flexible Information Retrieval**: Find similar startups and related information using semantic search
-- **Robust Data Processing**: Handle various data formats and edge cases with grace
+- **Robust Data Processing**: Handle various data formats and edge cases with ease
 - **Production-Ready Architecture**: Built with scalability and maintainability in mind
 - **✨ Completely Free to Use**: 
   - Uses GPT-2 for text generation (no API key needed)
   - Sentence Transformers for embeddings (runs locally)
   - No external API dependencies or usage costs
+
+## 💻 System Requirements
+
+- Python 3.11 or higher
+- 8GB RAM minimum (16GB recommended)
+- 2GB disk space for models and data
+- Operating Systems:
+  - Linux (recommended)
+  - macOS
+  - Windows (with WSL for best performance)
 
 ## 🛠️ Installation
 
@@ -208,7 +236,36 @@ pytest tests/test_real_data.py
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on:
+- Code of Conduct
+- Development setup
+- Submission guidelines
+- Code style
+- Testing requirements
+
+## ❓ Troubleshooting
+
+### Common Issues
+
+1. **ModuleNotFoundError**:
+   ```
+   ModuleNotFoundError: No module named 'transformers'
+   ```
+   Solution: Ensure you've installed all requirements:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **CUDA/GPU Issues**:
+   - By default, RAGVenture runs on CPU
+   - For GPU support, install PyTorch with CUDA (see PyTorch website)
+
+3. **Memory Issues**:
+   - Reduce batch size in config
+   - Use smaller model variants
+   - Process data in smaller chunks
+
+For more issues, please check our [Issues](https://github.com/valginer0/rag_startups/issues) page.
 
 ## 📄 License
 
@@ -216,6 +273,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- Built with [LangChain](https://github.com/langchain-ai/langchain)
-- Uses [ChromaDB](https://github.com/chroma-core/chroma) for vector storage
-- Powered by Sentence Transformers for embeddings
+- Built with [LangChain](https://github.com/hwchase17/langchain)
+- Powered by [Sentence Transformers](https://www.sbert.net/)
+- Inspired by Y Combinator startups

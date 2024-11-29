@@ -10,7 +10,7 @@ setup(
     name="rag_startups",
     version="0.1.0",
     author="Val Giner",
-    author_email="val@example.com",  # Replace with your email
+    author_email="valginer0@gmail.com",  # Replace with your email
     description="An intelligent startup idea generator using RAG technology",
     long_description=long_description,
     long_description_content_type="text/markdown",
