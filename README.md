@@ -32,6 +32,24 @@ Traditional startup analysis tools either rely on expensive API calls or lack re
   - Sentence Transformers for embeddings (runs locally)
   - No external API dependencies or usage costs
 
+## 🐳 Docker Support
+
+You can run RAGVenture using Docker:
+
+```bash
+# Build and run using docker-compose
+docker-compose up --build
+
+# Or using Docker directly
+docker build -t ragventure .
+docker run -it ragventure
+```
+
+The Docker setup includes:
+- Persistent model caches
+- Development mode with hot-reload
+- Future-proof port mapping for web interface
+
 ## 💻 System Requirements
 
 - Python 3.11 or higher
@@ -99,7 +117,7 @@ To use RAGVenture, you have two options:
    
    Expected CSV format from YC:
    ```csv
-   Company Name,Description,Category,Batch
+   Company Name,Description,long_desc,Category,Batch
    Airbnb,Marketplace for unique accommodations...,Marketplace,S08
    ```
 

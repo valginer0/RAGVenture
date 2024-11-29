@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    volumes:
+      - .:/app
+      - model-cache:/root/.cache/torch/sentence_transformers  # Cache for sentence transformers
+      - huggingface-cache:/root/.cache/huggingface  # Cache for HuggingFace models
+    environment:
+      - PYTHONPATH=/app
+      - LOCAL_LANGUAGE_MODEL=gpt2
+    ports:
+      - "8000:8000"  # If we add a web interface later
+    command: python src/rag_startups/rag_startup_ideas.py
+
+volumes:
+  model-cache:  # Persistent volume for sentence transformers cache
+  huggingface-cache:  # Persistent volume for HuggingFace models
