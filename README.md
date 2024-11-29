@@ -34,21 +34,51 @@ Traditional startup analysis tools either rely on expensive API calls or lack re
 
 ## 🐳 Docker Support
 
-You can run RAGVenture using Docker:
+The project provides Docker support for both CPU and GPU environments.
 
+### Prerequisites
+
+- Docker and Docker Compose installed
+- For GPU support:
+  - NVIDIA GPU with CUDA support
+  - [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installed
+  - [nvidia-docker2](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker) installed
+
+### Running with Docker
+
+#### CPU Version (Default)
+For systems without GPU or when GPU acceleration is not needed:
 ```bash
-# Build and run using docker-compose
-docker-compose up --build
-
-# Or using Docker directly
-docker build -t ragventure .
-docker run -it ragventure
+docker-compose up app-cpu
 ```
 
-The Docker setup includes:
-- Persistent model caches
-- Development mode with hot-reload
-- Future-proof port mapping for web interface
+#### GPU Version
+For systems with NVIDIA GPU support:
+```bash
+docker-compose up app-gpu
+```
+
+The GPU version will automatically utilize your NVIDIA GPU for faster model inference.
+
+### Building from Source with Docker
+
+To build the images manually:
+
+```bash
+# Build CPU version
+docker-compose build app-cpu
+
+# Build GPU version (requires NVIDIA Container Toolkit)
+docker-compose build app-gpu
+```
+
+### Docker Volumes
+
+The application uses Docker volumes to cache models and embeddings:
+- `model-cache`: Caches downloaded models
+- `huggingface-cache`: Caches HuggingFace model files
+
+These volumes persist between container restarts to avoid re-downloading models.
 
 ## 💻 System Requirements
 

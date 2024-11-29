@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  app:
+  app-cpu:
     build: .
     volumes:
       - .:/app
@@ -12,7 +12,26 @@ services:
       - LOCAL_LANGUAGE_MODEL=gpt2
     ports:
       - "8000:8000"  # If we add a web interface later
-    command: python src/rag_startups/rag_startup_ideas.py
+    command: python rag_startup_ideas.py --industry "AI/ML" --num-ideas 3
+
+  app-gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile.gpu
+    volumes:
+      - .:/app
+      - model-cache:/root/.cache/torch/sentence_transformers  # Cache for sentence transformers
+      - huggingface-cache:/root/.cache/huggingface  # Cache for HuggingFace models
+    environment:
+      - PYTHONPATH=/app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: python rag_startup_ideas.py --industry "AI/ML" --num-ideas 3
 
 volumes:
   model-cache:  # Persistent volume for sentence transformers cache
