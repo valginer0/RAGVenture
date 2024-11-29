@@ -12,7 +12,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 
 from embed_master import create_and_split_document, embed, setup_retriever, rag_chain_local
 from src.rag_startups.core.startup_metadata import StartupLookup
-from settings import local_language_model_name
+from config.config import LOCAL_LANGUAGE_MODEL
 
 def test_create_and_split_document():
     """Test document creation and splitting."""
@@ -87,7 +87,8 @@ def test_rag_chain_local():
     retriever = setup_retriever(vectorstore)
     
     # Set up generator and prompt
-    generator = pipeline("text-generation", model=local_language_model_name, pad_token_id=50256)
+    question = "Generate a startup idea in the AI space"
+    generator = pipeline("text-generation", model=LOCAL_LANGUAGE_MODEL, pad_token_id=50256)
     prompt_messages = [
         ("system", """
             You are an assistant for question-answering tasks.
@@ -101,7 +102,7 @@ def test_rag_chain_local():
     prompt = ChatPromptTemplate.from_messages(prompt_messages)
     
     # Test RAG chain
-    result = rag_chain_local("Tell me about AI companies", generator, prompt, retriever)
+    result = rag_chain_local(question, generator, prompt, retriever)
     
     # Basic assertions
     assert result is not None
@@ -144,7 +145,7 @@ def test_rag_chain_with_lookup(sample_startup_lookup):
     retriever = setup_retriever(vectorstore)
     
     # Create generator and prompt
-    generator = pipeline("text-generation", model=local_language_model_name, pad_token_id=50256)
+    generator = pipeline("text-generation", model=LOCAL_LANGUAGE_MODEL, pad_token_id=50256)
     prompt = ChatPromptTemplate.from_messages([
         ("system", "Generate a startup idea based on: {context}")
     ])

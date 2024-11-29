@@ -9,8 +9,10 @@ LANGCHAIN_PROJECT="the name of your langsmith project"
 """
 
 import argparse
+import os
+from pathlib import Path
 from embed_master import calculate_result, initialize_embeddings
-from src.rag_startups.data.loader import load_data, StartupLookup
+from src.rag_startups.data.loader import load_data
 from src.rag_startups.core.startup_metadata import StartupLookup
 from src.rag_startups.utils.output_formatter import formatter
 
@@ -24,7 +26,7 @@ def parse_arguments():
     
     # Optional arguments
     parser.add_argument('--file', type=str, default='yc_startups.json',
-                       help='Path to the JSON file containing startup data')
+                       help='Path to the JSON file containing startup data (default: yc_startups.json)')
     parser.add_argument('--max-lines', type=int, default=None,
                        help='Maximum number of lines to process')
     parser.add_argument('--num-ideas', type=int, default=3,
@@ -42,6 +44,12 @@ def parse_arguments():
 
 if __name__ == '__main__':
     args = parse_arguments()
+    
+    # Check if file exists
+    if not os.path.exists(args.file):
+        print(f"Error: File '{args.file}' not found.")
+        print(f"Make sure the file exists or specify a different file with --file option.")
+        exit(1)
     
     question = f"Generate a company idea for the {args.industry} industry based on provided context"
     

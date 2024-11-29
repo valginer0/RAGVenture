@@ -9,6 +9,10 @@ RAGVenture is an intelligent startup analysis tool powered by Retrieval-Augmente
 - **Flexible Information Retrieval**: Find similar startups and related information using semantic search
 - **Robust Data Processing**: Handle various data formats and edge cases with grace
 - **Production-Ready Architecture**: Built with scalability and maintainability in mind
+- **✨ Completely Free to Use**: 
+  - Uses GPT-2 for text generation (no API key needed)
+  - Sentence Transformers for embeddings (runs locally)
+  - No external API dependencies or usage costs
 
 ## 🛠️ Installation
 
@@ -76,13 +80,15 @@ To use RAGVenture, you have two options:
    [
      {
        "name": "Airbnb",
-       "description": "Founded in August of 2008 and based in San Francisco, California, Airbnb is a trusted community marketplace for people to list, discover, and book unique accommodations around the world.",
+       "description": "Marketplace for unique accommodations",
+       "long_desc": "Founded in August of 2008 and based in San Francisco, California, Airbnb is a trusted community marketplace for people to list, discover, and book unique accommodations around the world. The platform connects hosts and travelers, offering unique spaces for memorable experiences.",
        "category": "Marketplace",
        "year": "2008"
      },
      {
        "name": "Dropbox",
-       "description": "Dropbox is a file hosting service that offers cloud storage, file synchronization, and client software.",
+       "description": "Cloud storage and synchronization",
+       "long_desc": "Dropbox is a file hosting service that offers cloud storage, file synchronization, and client software. The service enables users to store and share files across devices, with features for both individual users and enterprise customers.",
        "category": "Enterprise Software",
        "year": "2007"
      }
@@ -96,39 +102,56 @@ For testing purposes, we provide a minimal sample dataset in `data/sample_startu
 
 ### Example Output
 
-When you run RAGVenture with YC data, here's what you get:
-
 ```bash
 $ python rag_startup_ideas.py
 
 {
-    "Description": "A platform for renting homes and apartments globally",
-    "Company": "Airbnb",
-    "Category": "Marketplace",
-    "Year": "2008",
-    "Similar Companies": [
-        "Airbnb: Trusted marketplace for unique accommodations worldwide",
-        "VRBO: Vacation rental marketplace connecting homeowners and travelers",
-        "Zillow: Real estate and rental marketplace platform"
+    "name": "RentEase",
+    "description": "A platform for renting homes and apartments globally",
+    "long_desc": "RentEase is a comprehensive rental platform that connects property owners with potential tenants worldwide. The platform features advanced search capabilities, secure payment processing, virtual tours, and a review system to build trust in the community. Property owners can easily list their spaces while renters can find their ideal accommodations.",
+    "category": "Real Estate",
+    "year": "2024",
+    "similar_companies": [
+        {
+            "name": "Airbnb",
+            "description": "Trusted marketplace for unique accommodations worldwide",
+            "similarity_score": 0.89
+        },
+        {
+            "name": "VRBO",
+            "description": "Vacation rental marketplace connecting homeowners and travelers",
+            "similarity_score": 0.82
+        },
+        {
+            "name": "Zillow",
+            "description": "Real estate and rental marketplace platform",
+            "similarity_score": 0.75
+        }
     ]
 }
 ```
 
 Using the Python API:
 ```python
+from rag_startups.core.rag_chain import initialize_rag, format_startup_idea
+from rag_startups.core.startup_metadata import StartupLookup
+
+# Load startup data and initialize the system
+data = load_startup_data('data/startups.json')  # Load your startup data
+lookup = StartupLookup()
+for item in data:
+    lookup.add_startup(item['long_desc'], item)  # Use long_desc for RAG processing
+
+# Initialize RAG system
+retriever = initialize_rag('data/startups.json')
+
+# Analyze a startup
 result = format_startup_idea(
-    "A platform for renting homes and apartments globally",
+    "An AI-powered customer support platform",
     retriever,
     lookup
 )
 print(result)
-# Output:
-# {
-#     "Description": "A platform for renting homes and apartments globally",
-#     "Company": "Airbnb",
-#     "Category": "Marketplace",
-#     "Year": "2008"
-# }
 ```
 
 ### Python API
@@ -143,7 +166,7 @@ from rag_startups.core.startup_metadata import StartupLookup
 data = load_startup_data('data/startups.json')  # Load your startup data
 lookup = StartupLookup()
 for item in data:
-    lookup.add_startup(item['description'], item)
+    lookup.add_startup(item['long_desc'], item)  # Use long_desc for RAG processing
 
 # Initialize RAG system
 retriever = initialize_rag('data/startups.json')

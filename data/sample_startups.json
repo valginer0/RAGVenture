@@ -1,0 +1,37 @@
+[
+  {
+    "name": "TechAssist AI",
+    "description": "AI-powered customer support platform",
+    "long_desc": "TechAssist AI revolutionizes customer support with an advanced AI platform that uses natural language processing to automatically handle customer inquiries. The system intelligently routes complex issues to human agents while handling routine queries autonomously. It provides detailed analytics on customer satisfaction and support team performance, helping businesses optimize their support operations. The platform includes features like sentiment analysis, multi-language support, and integration with popular CRM systems.",
+    "category": "Artificial Intelligence",
+    "year": "2023"
+  },
+  {
+    "name": "GreenCommute",
+    "description": "Sustainable transportation marketplace",
+    "long_desc": "GreenCommute is transforming urban transportation with its innovative eco-friendly ride-sharing platform. The service connects environmentally conscious commuters with electric vehicle owners for carpooling and shared rides. The platform calculates and displays carbon emission savings for each ride, offers incentives for regular users, and includes features like route optimization and flexible scheduling. GreenCommute also partners with local businesses to provide rewards for users who consistently choose green transportation options.",
+    "category": "Transportation",
+    "year": "2023"
+  },
+  {
+    "name": "HealthTrack Pro",
+    "description": "Comprehensive health monitoring platform",
+    "long_desc": "HealthTrack Pro is a cutting-edge health monitoring solution that seamlessly integrates with various wearable devices to track vital signs, exercise patterns, and sleep quality. The platform uses advanced algorithms to analyze health data and provide personalized insights. It can detect potential health issues early by identifying unusual patterns in vital signs and activity levels. The system includes features like automated health reports for healthcare providers, medication reminders, and personalized wellness recommendations based on individual health patterns.",
+    "category": "Healthcare",
+    "year": "2023"
+  },
+  {
+    "name": "CloudKitchen Hub",
+    "description": "Cloud kitchen management platform",
+    "long_desc": "CloudKitchen Hub enables traditional restaurants to expand into the delivery market through its comprehensive cloud kitchen platform. The service provides fully equipped kitchen spaces, integrated delivery management systems, and sophisticated order tracking software. The platform includes features like real-time inventory management, automated procurement systems, and dynamic pricing based on demand patterns. It also offers analytics tools to optimize menu performance and kitchen operations, helping restaurants maximize their delivery revenue while maintaining food quality.",
+    "category": "Food & Beverage",
+    "year": "2023"
+  },
+  {
+    "name": "EduTech Plus",
+    "description": "Adaptive learning platform",
+    "long_desc": "EduTech Plus revolutionizes online education with its adaptive learning platform that personalizes content based on individual student performance and learning styles. The system uses machine learning algorithms to analyze student responses and adjust difficulty levels in real-time. It features interactive multimedia lessons, instant feedback mechanisms, and AI-powered tutoring assistance. The platform includes comprehensive progress tracking tools for teachers and parents, collaborative learning features, and integration with popular learning management systems.",
+    "category": "Education",
+    "year": "2023"
+  }
+]

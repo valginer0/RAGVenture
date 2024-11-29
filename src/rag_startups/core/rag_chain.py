@@ -1,11 +1,12 @@
 """Core RAG chain functionality."""
 from typing import Any, List, Optional, Tuple
 import re
+import pandas as pd
 
 from langchain_core.prompts import ChatPromptTemplate
 from transformers import pipeline
 
-from ..data.loader import load_data, create_documents, split_documents, initialize_startup_lookup
+from ..data.loader import create_documents, split_documents, initialize_startup_lookup
 from ..embeddings.embedding import create_vectorstore, setup_retriever
 from ..utils.exceptions import ModelError
 from ..utils.timing import timing_decorator
@@ -19,12 +20,14 @@ from config.config import (
 startup_lookup = None
 
 @timing_decorator
-def initialize_rag(file_path: str, max_lines: Optional[int] = None):
-    """Initialize RAG system and lookup."""
-    global startup_lookup
+def initialize_rag(df: pd.DataFrame, json_data: list):
+    """Initialize RAG system and lookup.
     
-    # Load data
-    df, json_data = load_data(file_path, max_lines)
+    Args:
+        df: DataFrame containing startup data
+        json_data: Raw JSON data for startup lookup
+    """
+    global startup_lookup
     
     # Initialize lookup
     startup_lookup = initialize_startup_lookup(json_data)
@@ -35,7 +38,7 @@ def initialize_rag(file_path: str, max_lines: Optional[int] = None):
     
     # Setup retriever
     vectorstore = create_vectorstore(splits)
-    return setup_retriever(vectorstore)
+    return setup_retriever(vectorstore), startup_lookup
 
 def get_similar_description(description: str, retriever: Any) -> Optional[str]:
     """Get most similar description from the vector store."""
@@ -155,7 +158,7 @@ def rag_chain_local(
         
         for doc in context_docs:
             # Format the idea
-            sections = format_startup_idea(doc.page_content, retriever)
+            sections = format_startup_idea(doc.page_content, retriever, startup_lookup)
             
             # Skip if we've already seen this company
             if sections['Company'] in seen_companies:

@@ -26,6 +26,9 @@ def load_data(file_path: str | Path, max_lines: Optional[int] = None) -> Tuple[p
         DataLoadError: If there's an error loading or processing the data
     """
     try:
+        # Convert to Path object for consistent handling
+        file_path = Path(file_path)
+        
         # Load raw JSON first
         with open(file_path, 'r', encoding='utf-8') as f:
             raw_data = pd.read_json(f)

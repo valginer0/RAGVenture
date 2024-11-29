@@ -21,7 +21,7 @@ from sentence_transformers import SentenceTransformer
 from transformers import pipeline
 import json
 
-from settings import local_language_model_name
+from config.config import LOCAL_LANGUAGE_MODEL
 from src.rag_startups.core.rag_chain import format_startup_idea, initialize_rag
 from src.rag_startups.core.startup_metadata import StartupLookup
 from src.rag_startups.data.loader import create_documents, split_documents, StartupLookup
@@ -151,7 +151,7 @@ def calculate_result(
     if lookup is None:
         lookup = StartupLookup(json_data)
 
-    generator = pipeline("text-generation", model=local_language_model_name, pad_token_id=50256)
+    generator = pipeline("text-generation", model=LOCAL_LANGUAGE_MODEL, pad_token_id=50256)
     prompt = ChatPromptTemplate.from_messages(prompt_messages)
     result = rag_chain_local(question, generator, prompt, retriever, lookup=lookup, num_ideas=num_ideas)
     return result
