@@ -1,4 +1,5 @@
 """Logging configuration for the RAG Startups project."""
+
 import logging.config
 from pathlib import Path
 
@@ -9,9 +10,7 @@ LOGGING_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "standard": {
-            "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
-        },
+        "standard": {"format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"},
         "detailed": {
             "format": "%(asctime)s [%(levelname)s] %(name)s:%(lineno)d: %(message)s"
         },
@@ -36,15 +35,16 @@ LOGGING_CONFIG = {
         "": {  # root logger
             "handlers": ["console", "file"],
             "level": "INFO",
-            "propagate": True
+            "propagate": True,
         },
         "rag_startups": {
             "handlers": ["console", "file"],
             "level": "DEBUG",
-            "propagate": False
+            "propagate": False,
         },
-    }
+    },
 }
+
 
 def setup_logging():
     """Set up logging configuration."""

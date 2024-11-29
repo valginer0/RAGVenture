@@ -1,4 +1,5 @@
 """Configuration settings for the RAG Startups project."""
+
 from pathlib import Path
 from typing import Dict, Any
 import os

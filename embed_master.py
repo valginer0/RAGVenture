@@ -24,13 +24,17 @@ import json
 from config.config import LOCAL_LANGUAGE_MODEL
 from src.rag_startups.core.rag_chain import format_startup_idea, initialize_rag
 from src.rag_startups.core.startup_metadata import StartupLookup
-from src.rag_startups.data.loader import create_documents, split_documents, StartupLookup
+from src.rag_startups.data.loader import (
+    create_documents,
+    split_documents,
+    StartupLookup,
+)
 from src.rag_startups.utils.spinner import Spinner
 from src.rag_startups.utils.timing import timing_decorator
 
 # Configure logging to suppress batch processing messages
-logging.getLogger('sentence_transformers').setLevel(logging.WARNING)
-logging.getLogger('chromadb').setLevel(logging.WARNING)
+logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
+logging.getLogger("chromadb").setLevel(logging.WARNING)
 logging.basicConfig(level=logging.INFO)
 
 
@@ -73,7 +77,7 @@ def setup_retriever(vectorstore):
 
 
 @timing_decorator
-def initialize_embeddings(df: pd.DataFrame, model_name: str = 'all-MiniLM-L6-v2'):
+def initialize_embeddings(df: pd.DataFrame, model_name: str = "all-MiniLM-L6-v2"):
     """Initialize embeddings and retriever. This should be called once at startup."""
     splits = create_and_split_document(df)
     if not splits:
@@ -89,7 +93,7 @@ def initialize_embeddings(df: pd.DataFrame, model_name: str = 'all-MiniLM-L6-v2'
         if retriever is None:
             raise ValueError("Failed to set up retriever.")
     print("Initialization complete!\n")
-        
+
     return retriever
 
 
@@ -105,17 +109,17 @@ def rag_chain_local(question, generator, prompt, retriever, lookup=None, num_ide
         context_docs = retriever.invoke(question)
         formatted_ideas = []
         seen_companies = set()
-        
+
         for doc in context_docs:
             # Format the idea using the correct function
             sections = format_startup_idea(doc.page_content, retriever, lookup)
-            
+
             # Skip if we've already seen this company
-            if sections['Company'] in seen_companies:
+            if sections["Company"] in seen_companies:
                 continue
-                
-            seen_companies.add(sections['Company'])
-            
+
+            seen_companies.add(sections["Company"])
+
             # Format the idea with proper sections
             formatted_idea = f"\n{'='*50}\nStartup Idea #{len(formatted_ideas)+1}:\n"
             formatted_idea += f"Company: {sections['Company']}\n\n"
@@ -123,14 +127,17 @@ def rag_chain_local(question, generator, prompt, retriever, lookup=None, num_ide
             formatted_idea += f"SOLUTION:\n{sections['Solution']}\n\n"
             formatted_idea += f"TARGET MARKET:\n{sections['Market']}\n\n"
             formatted_idea += f"UNIQUE VALUE:\n{sections['Value']}"
-            
+
             formatted_ideas.append(formatted_idea)
-            
+
             # Stop after num_ideas unique companies
             if len(formatted_ideas) >= num_ideas:
                 break
-        
-        return "Here are the most relevant startup ideas from YC companies:\n" + "\n".join(formatted_ideas)
+
+        return (
+            "Here are the most relevant startup ideas from YC companies:\n"
+            + "\n".join(formatted_ideas)
+        )
     except Exception as e:
         logging.error(f"Error in RAG chain: {e}")
         return ""
@@ -142,16 +149,20 @@ def calculate_result(
     retriever: Any,
     json_data: list,
     prompt_messages: List[Tuple[str, str]],
-    model_name: str = 'all-MiniLM-L6-v2',
+    model_name: str = "all-MiniLM-L6-v2",
     lookup: Optional[StartupLookup] = None,
-    num_ideas: int = 3
+    num_ideas: int = 3,
 ) -> str:
     """Calculate result using the RAG pipeline."""
     # Initialize lookup if not provided
     if lookup is None:
         lookup = StartupLookup(json_data)
 
-    generator = pipeline("text-generation", model=LOCAL_LANGUAGE_MODEL, pad_token_id=50256)
+    generator = pipeline(
+        "text-generation", model=LOCAL_LANGUAGE_MODEL, pad_token_id=50256
+    )
     prompt = ChatPromptTemplate.from_messages(prompt_messages)
-    result = rag_chain_local(question, generator, prompt, retriever, lookup=lookup, num_ideas=num_ideas)
+    result = rag_chain_local(
+        question, generator, prompt, retriever, lookup=lookup, num_ideas=num_ideas
+    )
     return result

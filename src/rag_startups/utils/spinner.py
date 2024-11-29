@@ -3,9 +3,12 @@ import threading
 import itertools
 import time
 
+
 class Spinner:
     def __init__(self, message="Processing"):
-        self.spinner = itertools.cycle(['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'])
+        self.spinner = itertools.cycle(
+            ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+        )
         self.message = message
         self.running = False
         self.spinner_thread = None
@@ -13,9 +16,9 @@ class Spinner:
 
     def _clear_line(self):
         # Clear the current line
-        sys.stdout.write('\r')
-        sys.stdout.write(' ' * (len(self.last_line) + 2))
-        sys.stdout.write('\r')
+        sys.stdout.write("\r")
+        sys.stdout.write(" " * (len(self.last_line) + 2))
+        sys.stdout.write("\r")
         sys.stdout.flush()
 
     def spin(self):
@@ -40,4 +43,4 @@ class Spinner:
             self.spinner_thread.join()
         self._clear_line()
         # Move to new line for any following output
-        sys.stdout.write('\n')
+        sys.stdout.write("\n")

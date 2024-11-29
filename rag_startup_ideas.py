@@ -16,22 +16,33 @@ from src.rag_startups.data.loader import load_data
 from src.rag_startups.core.startup_metadata import StartupLookup
 from src.rag_startups.utils.output_formatter import formatter
 
+
 def parse_arguments():
     """Parse command line arguments."""
-    parser = argparse.ArgumentParser(description='Generate startup ideas using RAG')
-    
+    parser = argparse.ArgumentParser(description="Generate startup ideas using RAG")
+
     # Required arguments
-    parser.add_argument('--industry', type=str, required=True,
-                      help='Industry to generate startup ideas for')
-    
+    parser.add_argument(
+        "--industry",
+        type=str,
+        required=True,
+        help="Industry to generate startup ideas for",
+    )
+
     # Optional arguments
-    parser.add_argument('--file', type=str, default='yc_startups.json',
-                       help='Path to the JSON file containing startup data (default: yc_startups.json)')
-    parser.add_argument('--max-lines', type=int, default=None,
-                       help='Maximum number of lines to process')
-    parser.add_argument('--num-ideas', type=int, default=3,
-                       help='Number of startup ideas to generate')
-    
+    parser.add_argument(
+        "--file",
+        type=str,
+        default="yc_startups.json",
+        help="Path to the JSON file containing startup data (default: yc_startups.json)",
+    )
+    parser.add_argument(
+        "--max-lines", type=int, default=None, help="Maximum number of lines to process"
+    )
+    parser.add_argument(
+        "--num-ideas", type=int, default=3, help="Number of startup ideas to generate"
+    )
+
     # Future extensibility (commented out for now)
     # parser.add_argument('--chunk-size', type=int, default=1000,
     #                    help='Size of text chunks for processing')
@@ -39,40 +50,46 @@ def parse_arguments():
     #                    help='Overlap between text chunks')
     # parser.add_argument('--model', type=str, default='all-MiniLM-L6-v2',
     #                    help='Model to use for embeddings')
-    
+
     return parser.parse_args()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     args = parse_arguments()
-    
+
     # Check if file exists
     if not os.path.exists(args.file):
         print(f"Error: File '{args.file}' not found.")
-        print(f"Make sure the file exists or specify a different file with --file option.")
+        print(
+            f"Make sure the file exists or specify a different file with --file option."
+        )
         exit(1)
-    
+
     question = f"Generate a company idea for the {args.industry} industry based on provided context"
-    
+
     prompt_messages = [
-        ("system", """
+        (
+            "system",
+            """
             You are an assistant for question-answering tasks.
             Use the following pieces of retrieved context to answer the question.
             If you don't know the answer, just say that you don't know.
             Use three sentences maximum and keep the answer concise.
             Question: {question}
             Context: {context}
-            Answer:""")
+            Answer:""",
+        )
     ]
 
     # Load data once and get both DataFrame and JSON data
     df, json_data = load_data(args.file, args.max_lines)
-    
+
     # Initialize lookup with the JSON data
     lookup = StartupLookup(json_data)
-    
+
     # Initialize embeddings and retriever once
     retriever = initialize_embeddings(df)
-    
+
     # Pass retriever to calculate_result
     result = calculate_result(
         question=question,
@@ -80,9 +97,9 @@ if __name__ == '__main__':
         json_data=json_data,
         prompt_messages=prompt_messages,
         lookup=lookup,
-        num_ideas=args.num_ideas
+        num_ideas=args.num_ideas,
     )
-    
+
     # Print the results in a nicely formatted way
     formatter.print_startup_ideas(result)
     formatter.print_summary()
