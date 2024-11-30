@@ -121,6 +121,42 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.history/
+*.workspace
+.project
+.classpath
+.settings/
+
+# Model caches and large files
+.cache/
+.torch/
+.pytorch/
+.transformers/
+.sentence_transformers/
+models/
+*.bin
+*.pt
+*.pth
+*.onnx
+
+# Environment
+.env
+.venv/
+env/
+venv/
+ENV/
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
+logs/
+
 # Environments
 .env
 .venv
@@ -160,3 +196,7 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+# WSL and Windows specific files
+.wslconfig
+adjust_timeout.reg
