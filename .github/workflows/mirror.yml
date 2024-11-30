@@ -10,11 +10,13 @@ jobs:
   mirror:
     runs-on: ubuntu-latest
     steps:
-      - name: Sync repositories
-        uses: wei/git-sync@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          source_repo: "https://github.com/valginer0/rag_startups"
-          source_branch: "main"
-          destination_repo: "https://github.com/valginer0/RAGVenture"
-          destination_branch: "main"
-          github_token: ${{ secrets.MIRROR_SSH_KEY }}
+          fetch-depth: 0
+
+      - name: Mirror to public repository
+        run: |
+          git remote add public https://${{ secrets.MIRROR_SSH_KEY }}@github.com/valginer0/RAGVenture.git
+          git fetch --unshallow origin
+          git push --force public main:main
