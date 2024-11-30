@@ -4,6 +4,8 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![LangChain](https://img.shields.io/badge/powered%20by-LangChain-blue.svg)](https://github.com/hwchase17/langchain)
 [![Sentence Transformers](https://img.shields.io/badge/powered%20by-Sentence%20Transformers-blue.svg)](https://www.sbert.net/)
+[![CI](https://github.com/valginer0/rag_startups/actions/workflows/ci.yml/badge.svg)](https://github.com/valginer0/rag_startups/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/valginer0/rag_startups/graph/badge.svg)](https://codecov.io/gh/valginer0/rag_startups)
 
 RAGVenture is an intelligent startup analysis tool powered by Retrieval-Augmented Generation (RAG). It helps users explore, understand, and analyze startup companies by combining the power of large language models with precise information retrieval:
 
