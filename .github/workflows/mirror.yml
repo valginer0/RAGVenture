@@ -22,7 +22,7 @@ jobs:
 
       - name: Push to Public Repository
         env:
-          MIRROR_TOKEN: ${{ secrets.MIRROR_SSH_KEY }}
+          GITHUB_TOKEN: ${{ secrets.MIRROR_SSH_KEY }}
         run: |
-          git remote add public https://${{ secrets.MIRROR_SSH_KEY }}@github.com/valginer0/RAGVenture.git
+          git remote add public https://${GITHUB_TOKEN}@github.com/valginer0/RAGVenture.git
           git push public main:main --force
