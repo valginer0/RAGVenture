@@ -35,19 +35,25 @@ def temp_json_file(sample_data):
 
 def test_load_data_success(temp_json_file):
     """Test successful data loading."""
-    df = load_data(temp_json_file)
+    df, json_data = load_data(temp_json_file)
 
+    # Test DataFrame
     assert isinstance(df, pd.DataFrame)
     assert len(df) == 3  # After removing duplicates and null values
     assert list(df.columns) == ["long_desc"]
     assert df["long_desc"].isna().sum() == 0
 
+    # Test JSON data
+    assert isinstance(json_data, list)
+    assert len(json_data) == 5  # Original data before cleaning
+
 
 def test_load_data_with_limit(temp_json_file):
     """Test data loading with line limit."""
-    df = load_data(temp_json_file, max_lines=2)
+    df, json_data = load_data(temp_json_file, max_lines=2)
 
     assert len(df) == 2
+    assert len(json_data) == 2
 
 
 def test_load_data_file_not_found():
