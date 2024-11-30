@@ -1,0 +1,23 @@
+name: Mirror Repository
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # allows manual triggering
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # fetch all history
+
+      - name: Mirror to Public Repository
+        uses: pixta-dev/repository-mirroring-action@v1
+        with:
+          target_repo_url: "git@github.com:valginer0/RAGVenture.git"
+          ssh_private_key: ${{ secrets.MIRROR_SSH_KEY }}
+          force_push: true  # ensure sync even if histories diverge
