@@ -15,14 +15,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Configure Git
-        run: |
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "GitHub Actions"
-
       - name: Push to Public Repository
-        env:
-          GITHUB_TOKEN: ${{ secrets.MIRROR_SSH_KEY }}
-        run: |
-          git remote add public https://${GITHUB_TOKEN}@github.com/valginer0/RAGVenture.git
-          git push public main:main --force
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.MIRROR_SSH_KEY }}
+          repository: valginer0/RAGVenture
+          branch: main
+          force: true
