@@ -21,6 +21,6 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git remote add public https://x-access-token:${GITHUB_TOKEN}@github.com/valginer0/RAGVenture.git
+          git remote add public "https://${GITHUB_TOKEN}@github.com/valginer0/RAGVenture.git"
           git fetch origin
           git push --force public main:main
