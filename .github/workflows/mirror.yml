@@ -16,7 +16,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: true
           token: ${{ secrets.MIRROR_PAT }}
+          repository: valginer0/rag_startups
 
       - name: Mirror to public repository
         run: |
