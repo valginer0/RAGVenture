@@ -22,6 +22,7 @@ dependencies = [
     "sentence-transformers",
     "chromadb",
     "pytest",
+    "backoff>=2.2.1",
 ]
 
 [project.optional-dependencies]
