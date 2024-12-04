@@ -27,11 +27,14 @@ import sys
 import json
 from pathlib import Path
 from typing import List, Dict
+from transformers import pipeline
 
 from config.logging_config import setup_logging
-from .core.rag_chain import calculate_result
+from config.config import DEFAULT_PROMPT_TEMPLATE
+from .core.rag_chain import rag_chain_local, initialize_rag
 from .utils.exceptions import RAGStartupsError
 from .idea_generator.generator import StartupIdeaGenerator
+from .data.loader import load_data
 
 
 def parse_startup_examples(rag_output: str) -> List[Dict]:
@@ -65,7 +68,7 @@ def parse_args():
     )
     parser.add_argument(
         "--data", 
-        default="data/yc_startups.json", 
+        default="yc_startups.json", 
         help="Path to startup data JSON file"
     )
     parser.add_argument(
@@ -114,12 +117,25 @@ def main():
         example_startups = []
         if not args.skip_research:
             logger.info("Researching existing startups...")
-            rag_result = calculate_result(
-                args.industry,
-                Path(args.data),
-                args.model,
-                args.max_lines,
+            
+            # Load and prepare data
+            df, json_data = load_data(args.data, args.max_lines)
+            
+            # Initialize RAG system
+            retriever, lookup = initialize_rag(df, json_data)
+            
+            # Initialize text generator
+            generator = pipeline('text-generation', model=args.model)
+            
+            # Get relevant startups
+            rag_result = rag_chain_local(
+                question=args.industry,
+                generator=generator,
+                prompt_template=DEFAULT_PROMPT_TEMPLATE,
+                retriever=retriever,
+                max_lines=args.max_lines
             )
+            
             print("\nRelevant Existing Startups:")
             print("-" * 40)
             print(rag_result)

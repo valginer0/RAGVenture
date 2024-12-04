@@ -5,6 +5,7 @@ from typing import List, Union, Any
 import numpy as np
 from langchain_community.vectorstores.chroma import Chroma
 from sentence_transformers import SentenceTransformer
+from langchain.docstore.document import Document
 
 from ..utils.exceptions import EmbeddingError
 from ..utils.timing import timing_decorator
@@ -59,13 +60,14 @@ class CustomEmbeddingFunction:
 
 @timing_decorator
 def create_vectorstore(
-    texts: List[str], model_name: str = DEFAULT_EMBEDDING_MODEL
+    texts: Union[List[str], List[Document]], 
+    model_name: str = DEFAULT_EMBEDDING_MODEL
 ) -> Chroma:
     """
     Create a vector store from texts using custom embeddings.
 
     Args:
-        texts: List of texts to embed
+        texts: List of texts or Documents to embed
         model_name: Name of the embedding model to use
 
     Returns:
@@ -75,8 +77,21 @@ def create_vectorstore(
         EmbeddingError: If there's an error during embedding
     """
     try:
-        custom_embedder = CustomEmbeddingFunction(model_name)
-        return Chroma.from_texts(texts, embedding=custom_embedder)
+        embedding_fn = CustomEmbeddingFunction(model_name)
+        
+        # Use appropriate method based on input type
+        if texts and isinstance(texts[0], Document):
+            return Chroma.from_documents(
+                documents=texts,
+                embedding=embedding_fn,
+                persist_directory=".chroma"
+            )
+        else:
+            return Chroma.from_texts(
+                texts=texts,
+                embedding=embedding_fn,
+                persist_directory=".chroma"
+            )
     except Exception as e:
         raise EmbeddingError(f"Failed to create vector store: {e}")
 

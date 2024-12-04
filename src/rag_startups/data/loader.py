@@ -111,9 +111,4 @@ def initialize_startup_lookup(json_data: list) -> StartupLookup:
     Returns:
         Populated StartupLookup instance
     """
-    lookup = StartupLookup()
-    for item in json_data:
-        desc = item.get("long_desc", item.get("description", ""))
-        if desc:
-            lookup.add_startup(desc, item)
-    return lookup
+    return StartupLookup(json_data)
