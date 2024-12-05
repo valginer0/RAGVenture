@@ -1,17 +1,18 @@
 """Core RAG chain functionality."""
 
-from typing import Any, List, Optional, Tuple
 import re
-import pandas as pd
+from typing import Any, List, Optional, Tuple
 
+import pandas as pd
 from langchain_core.prompts import ChatPromptTemplate
 from transformers import pipeline
 
-from ..data.loader import create_documents, split_documents, initialize_startup_lookup
+from config.config import DEFAULT_PROMPT_TEMPLATE, LOCAL_LANGUAGE_MODEL, MAX_LINES
+
+from ..data.loader import create_documents, initialize_startup_lookup, split_documents
 from ..embeddings.embedding import create_vectorstore, setup_retriever
 from ..utils.exceptions import ModelError
 from ..utils.timing import timing_decorator
-from config.config import DEFAULT_PROMPT_TEMPLATE, LOCAL_LANGUAGE_MODEL, MAX_LINES
 
 # Global lookup instance
 startup_lookup = None

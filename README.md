@@ -64,10 +64,10 @@ Typical processing times on a standard machine:
 - **Command-Line Interface**: Easy-to-use CLI for quick startup idea generation
 - **Smart Startup Analysis**: Generate ideas using advanced RAG technology
 - **Intelligent Metadata**: Extract company names, problems, and solutions
-- **Fast Local Processing**: 
+- **Fast Local Processing**:
   - One-time embedding generation (~22s)
   - Quick idea generation (~0.5s)
-- **Production-Ready**: 
+- **Production-Ready**:
   - 31 passing unit tests
   - Comprehensive error handling
   - Performance monitoring
@@ -75,7 +75,7 @@ Typical processing times on a standard machine:
 - **Intelligent Metadata Extraction**: Automatically identify and extract company names, categories, and other metadata
 - **Flexible Information Retrieval**: Find similar startups and related information using semantic search
 - **Robust Data Processing**: Handle various data formats and edge cases with ease
-- **✨ Completely Free to Use**: 
+- **✨ Completely Free to Use**:
   - Uses GPT-2 for text generation (no API key needed)
   - Sentence Transformers for embeddings (runs locally)
   - No external API dependencies or usage costs
@@ -176,8 +176,8 @@ RAGVenture is designed to work with startup data in JSON format. The system was 
 
 To use RAGVenture, you have two options:
 
-1. **Recommended: Use YC Data** (Tested and Most Reliable): 
-   
+1. **Recommended: Use YC Data** (Tested and Most Reliable):
+
    a. Obtain YC Data:
    - Visit [Y Combinator's website](https://www.ycombinator.com/companies)
    - Use their "Download as CSV" feature (requires login)
@@ -186,13 +186,13 @@ To use RAGVenture, you have two options:
      # Convert YC data to JSON
      python -m rag_startups.data.convert_yc_data path/to/yc_data.csv -o startups.json
      ```
-   
+
    The conversion script handles:
    - Cleaning and formatting descriptions
    - Extracting years from batch information
    - Removing entries without names or descriptions
    - Proper UTF-8 encoding
-   
+
    Expected CSV format from YC:
    ```csv
    Company Name,Description,long_desc,Category,Batch
@@ -219,7 +219,7 @@ To use RAGVenture, you have two options:
    ]
    ```
 
-2. **Alternative: Use Your Own Data**: 
+2. **Alternative: Use Your Own Data**:
    If you prefer to use your own dataset, prepare it in the following format shown above.
 
 For testing purposes, we provide a minimal sample dataset in `data/sample_startups.json` with a few fictional entries, but for best results, we recommend using the YC dataset.

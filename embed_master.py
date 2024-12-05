@@ -8,9 +8,11 @@ LANGCHAIN_PROJECT="the name of your langsmith project"
 
 """
 
+import json
 import logging
 import time
-from typing import List, Tuple, Optional, Any
+from typing import Any, List, Optional, Tuple
+
 import pandas as pd
 from langchain.docstore.document import Document
 from langchain_chroma import Chroma
@@ -19,15 +21,14 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langsmith import traceable
 from sentence_transformers import SentenceTransformer
 from transformers import pipeline
-import json
 
 from config.config import LOCAL_LANGUAGE_MODEL
 from src.rag_startups.core.rag_chain import format_startup_idea, initialize_rag
 from src.rag_startups.core.startup_metadata import StartupLookup
 from src.rag_startups.data.loader import (
+    StartupLookup,
     create_documents,
     split_documents,
-    StartupLookup,
 )
 from src.rag_startups.utils.spinner import Spinner
 from src.rag_startups.utils.timing import timing_decorator

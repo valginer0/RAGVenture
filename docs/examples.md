@@ -121,13 +121,13 @@ for _, row in df.iterrows():
 # Analyze startups in specific category
 def analyze_category(description, category, retriever, lookup):
     result = format_startup_idea(description, retriever, lookup)
-    
+
     # Filter similar companies by category
     similar = [
         company for company in result['Similar Companies']
         if company.get('category') == category
     ]
-    
+
     result['Similar Companies'] = similar
     return result
 
@@ -152,7 +152,7 @@ def analyze_trends(json_data, year=None):
         data = [item for item in json_data if item['year'] == str(year)]
     else:
         data = json_data
-        
+
     categories = Counter(item['category'] for item in data)
     return categories.most_common()
 
@@ -175,13 +175,13 @@ lookup = StartupLookup()
 def analyze_startup():
     data = request.json
     description = data.get('description')
-    
+
     result = format_startup_idea(
         description,
         retriever,
         lookup
     )
-    
+
     return jsonify(result)
 
 if __name__ == '__main__':
@@ -198,13 +198,13 @@ def process_batch(input_file, output_file):
     # Load system
     retriever = initialize_rag('data/startups.json')
     lookup = StartupLookup()
-    
+
     # Process ideas from CSV
     with open(input_file) as f_in, open(output_file, 'w') as f_out:
         reader = csv.DictReader(f_in)
         writer = csv.DictWriter(f_out, fieldnames=['idea', 'analysis'])
         writer.writeheader()
-        
+
         for row in reader:
             result = format_startup_idea(
                 row['idea'],

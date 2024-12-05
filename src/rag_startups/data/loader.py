@@ -1,15 +1,17 @@
 """Data loading and processing functionality."""
 
 from pathlib import Path
-from typing import Optional, Tuple, Union, List
+from typing import List, Optional, Tuple, Union
+
 import pandas as pd
 from langchain.docstore.document import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+from config.config import CHUNK_OVERLAP, CHUNK_SIZE
+
 from ..core.startup_metadata import StartupLookup
 from ..utils.exceptions import DataLoadError
 from ..utils.timing import timing_decorator
-from config.config import CHUNK_SIZE, CHUNK_OVERLAP
 
 
 @timing_decorator

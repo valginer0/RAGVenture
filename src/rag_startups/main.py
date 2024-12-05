@@ -22,19 +22,21 @@ MAX_LINES: Maximum number of lines to process from the data file (default: 50000
 """
 
 import argparse
+import json
 import logging
 import sys
-import json
 from pathlib import Path
-from typing import List, Dict
+from typing import Dict, List
+
 from transformers import pipeline
 
-from config.logging_config import setup_logging
 from config.config import DEFAULT_PROMPT_TEMPLATE
-from .core.rag_chain import rag_chain_local, initialize_rag
-from .utils.exceptions import RAGStartupsError
-from .idea_generator.generator import StartupIdeaGenerator
+from config.logging_config import setup_logging
+
+from .core.rag_chain import initialize_rag, rag_chain_local
 from .data.loader import load_data
+from .idea_generator.generator import StartupIdeaGenerator
+from .utils.exceptions import RAGStartupsError
 
 
 def parse_startup_examples(rag_output: str) -> List[Dict]:
@@ -44,17 +46,19 @@ def parse_startup_examples(rag_output: str) -> List[Dict]:
     """
     # TODO: Implement proper parsing based on RAG output format
     # For now, create a simple example from the RAG output
-    return [{
-        "name": "Example from YC",
-        "problem": rag_output[:200],  # Use first 200 chars as problem description
-        "solution": "Solution derived from YC example",
-        "target_market": "Similar to YC startup",
-        "unique_value": [
-            "Based on successful YC startup",
-            "Market-validated approach",
-            "Proven business model"
-        ]
-    }]
+    return [
+        {
+            "name": "Example from YC",
+            "problem": rag_output[:200],  # Use first 200 chars as problem description
+            "solution": "Solution derived from YC example",
+            "target_market": "Similar to YC startup",
+            "unique_value": [
+                "Based on successful YC startup",
+                "Market-validated approach",
+                "Proven business model",
+            ],
+        }
+    ]
 
 
 def parse_args():
@@ -67,14 +71,10 @@ def parse_args():
         help="Industry or domain to research and generate ideas for (e.g., 'Real Estate', 'AI', 'Healthcare')",
     )
     parser.add_argument(
-        "--data", 
-        default="yc_startups.json", 
-        help="Path to startup data JSON file"
+        "--data", default="yc_startups.json", help="Path to startup data JSON file"
     )
     parser.add_argument(
-        "--model", 
-        default="gpt2", 
-        help="Name of the language model to use for RAG"
+        "--model", default="gpt2", help="Name of the language model to use for RAG"
     )
     parser.add_argument(
         "--max-lines",
@@ -117,57 +117,59 @@ def main():
         example_startups = []
         if not args.skip_research:
             logger.info("Researching existing startups...")
-            
+
             # Load and prepare data
             df, json_data = load_data(args.data, args.max_lines)
-            
+
             # Initialize RAG system
             retriever, lookup = initialize_rag(df, json_data)
-            
+
             # Initialize text generator
-            generator = pipeline('text-generation', model=args.model)
-            
+            generator = pipeline("text-generation", model=args.model)
+
             # Get relevant startups
             rag_result = rag_chain_local(
                 question=args.industry,
                 generator=generator,
                 prompt_template=DEFAULT_PROMPT_TEMPLATE,
                 retriever=retriever,
-                max_lines=args.max_lines
+                max_lines=args.max_lines,
             )
-            
+
             print("\nRelevant Existing Startups:")
             print("-" * 40)
             print(rag_result)
             print("-" * 40)
-            
+
             # Parse RAG results into examples
             example_startups = parse_startup_examples(rag_result)
-        
+
         # Step 2: Generate new ideas based on research
         logger.info("Generating new startup ideas...")
         generator = StartupIdeaGenerator()
-        
+
         # If no examples from research, create a basic example
         if not example_startups:
-            example_startups = [{
-                "name": "Industry Example",
-                "problem": f"Various challenges in the {args.industry} sector",
-                "solution": f"Innovative approaches to {args.industry} problems",
-                "target_market": f"Businesses and consumers in {args.industry}",
-                "unique_value": [
-                    "Domain expertise",
-                    "Novel solution",
-                    "Market fit"
-                ]
-            }]
-        
+            example_startups = [
+                {
+                    "name": "Industry Example",
+                    "problem": f"Various challenges in the {args.industry} sector",
+                    "solution": f"Innovative approaches to {args.industry} problems",
+                    "target_market": f"Businesses and consumers in {args.industry}",
+                    "unique_value": [
+                        "Domain expertise",
+                        "Novel solution",
+                        "Market fit",
+                    ],
+                }
+            ]
+
         ideas = generator.generate(
             num_ideas=args.num_ideas,
             example_startups=example_startups,
-            temperature=args.temperature
+            temperature=args.temperature,
         )
-        
+
         if ideas:
             print("\nGenerated New Ideas:")
             print("-" * 40)

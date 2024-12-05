@@ -4,14 +4,15 @@ Prompt templates for startup idea generation.
 
 from typing import List
 
+
 def generate_base_prompt(num_ideas: int, example_startups: List[dict] = None) -> str:
     """
     Generate the base prompt for startup idea generation.
-    
+
     Args:
         num_ideas: Number of startup ideas to generate
         example_startups: Optional list of example startups from our database
-    
+
     Returns:
         Formatted prompt string
     """
@@ -23,11 +24,13 @@ def generate_base_prompt(num_ideas: int, example_startups: List[dict] = None) ->
                 "problem": "Fragment's premise is that every company using AI will need humans in the loop and software for the handoff between AI and humans.",
                 "solution": "We start by helping operations teams in fintech companies with task management for their manual processes (onboarding, compliance…).",
                 "target_market": "the handoff between ai and humans.",
-                "unique_value": ["We start by helping operations teams in fintech companies with task management for their manual processes (onboarding, compliance…)"]
+                "unique_value": [
+                    "We start by helping operations teams in fintech companies with task management for their manual processes (onboarding, compliance…)"
+                ],
             },
             # Add more default examples here
         ]
-    
+
     # Format examples into prompt
     examples = ""
     for i, startup in enumerate(example_startups, 1):
@@ -39,12 +42,12 @@ Solution: {startup['solution']}
 Target Market: {startup['target_market']}
 Unique Value:
 """
-        if isinstance(startup['unique_value'], list):
-            for point in startup['unique_value']:
+        if isinstance(startup["unique_value"], list):
+            for point in startup["unique_value"]:
                 examples += f"• {point}\n"
         else:
             examples += f"• {startup['unique_value']}\n"
-    
+
     return f"""Generate {num_ideas} new startup ideas, without existing companies working on them yet, based on the following existing startup descriptions:
 {examples}
 IMPORTANT FORMATTING INSTRUCTIONS:

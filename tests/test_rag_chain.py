@@ -2,9 +2,10 @@
 
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock, patch
+
 import pandas as pd
 import pytest
-from unittest.mock import patch, MagicMock
 from langchain.docstore.document import Document
 from langchain_core.prompts import ChatPromptTemplate
 from transformers import pipeline
@@ -12,17 +13,17 @@ from transformers import pipeline
 # Add src directory to Python path
 sys.path.append(str(Path(__file__).parent.parent))
 
+from config.config import DEFAULT_PROMPT_TEMPLATE, LOCAL_LANGUAGE_MODEL
 from embed_master import (
     create_and_split_document,
     embed,
-    setup_retriever,
     rag_chain_local,
+    setup_retriever,
 )
 from src.rag_startups.core.startup_metadata import StartupLookup
 from src.rag_startups.embeddings.embedding import create_vectorstore
 from src.rag_startups.idea_generator.generator import StartupIdeaGenerator
 from src.rag_startups.main import parse_startup_examples
-from config.config import LOCAL_LANGUAGE_MODEL, DEFAULT_PROMPT_TEMPLATE
 
 
 def test_create_and_split_document():
@@ -231,11 +232,11 @@ def test_format_startup_idea_with_lookup(sample_startup_lookup):
 def test_text_only_embeddings():
     """Test that embeddings work with plain text input."""
     texts = ["This is a test startup in AI", "Another startup in healthcare"]
-    
+
     # Test vectorstore creation works with plain texts
     vectorstore = create_vectorstore(texts)
     assert vectorstore is not None
-    
+
     # Test retrieval works
     results = vectorstore.similarity_search("AI startup")
     assert len(results) > 0
@@ -244,46 +245,47 @@ def test_text_only_embeddings():
 
 def test_rag_with_generator():
     """Test RAG output feeding into generator."""
-    with patch.dict('os.environ', {'HUGGINGFACE_TOKEN': 'test_token'}):
+    with patch.dict("os.environ", {"HUGGINGFACE_TOKEN": "test_token"}):
         # Create test documents and set up retriever
         texts = ["Test AI startup description", "Another startup example"]
         documents = [Document(page_content=text) for text in texts]
         vectorstore = create_vectorstore([doc.page_content for doc in documents])
         retriever = vectorstore.as_retriever()
-        
+
         # Create generator instance
         generator = StartupIdeaGenerator()
-        
+
         # Mock the text_generation method
         generator.client.text_generation = MagicMock(
             return_value="Startup Idea 1: AI-Powered Test Solution\nProblem: Testing is hard\nSolution: AI makes it easy\nTarget Market: Developers"
         )
-        
+
         # Create prompt from template
         prompt = ChatPromptTemplate.from_template(DEFAULT_PROMPT_TEMPLATE)
-        
+
         # Get RAG output
         rag_output = rag_chain_local(
             question="AI startups",
             generator=generator,
             prompt=prompt,
             retriever=retriever,
-            num_ideas=1  # Just one idea for testing
+            num_ideas=1,  # Just one idea for testing
         )
         assert rag_output is not None
-        
+
         # Test parsing RAG output into examples
         examples = parse_startup_examples(rag_output)
         assert isinstance(examples, list)
         assert len(examples) > 0
         assert all(isinstance(ex, dict) for ex in examples)
-        assert all(key in examples[0] for key in ['name', 'problem', 'solution', 'target_market'])
-        
+        assert all(
+            key in examples[0]
+            for key in ["name", "problem", "solution", "target_market"]
+        )
+
         # Test generator can use RAG output
         result = generator.generate(
-            num_ideas=1,
-            example_startups=examples,
-            temperature=0.7
+            num_ideas=1, example_startups=examples, temperature=0.7
         )
         assert result is not None
         assert "Startup Idea" in result

@@ -3,13 +3,14 @@
 import json
 import os
 import sys
-import pytest
 from pathlib import Path
+
+import pytest
 
 # Add src directory to Python path
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
-from rag_startups.data.convert_yc_data import convert_csv_to_json, clean_description
+from rag_startups.data.convert_yc_data import clean_description, convert_csv_to_json
 
 # Get the test data directory
 TEST_DIR = Path(__file__).parent

@@ -11,9 +11,10 @@ LANGCHAIN_PROJECT="the name of your langsmith project"
 import argparse
 import os
 from pathlib import Path
+
 from embed_master import calculate_result, initialize_embeddings
-from src.rag_startups.data.loader import load_data
 from src.rag_startups.core.startup_metadata import StartupLookup
+from src.rag_startups.data.loader import load_data
 from src.rag_startups.utils.output_formatter import formatter
 
 

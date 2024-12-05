@@ -1,15 +1,15 @@
 """Test with real YC startup data."""
 
 import json
-import sys
 import os
 import random
+import sys
 
 # Add the project root to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.rag_startups.core.startup_metadata import StartupLookup
 from src.rag_startups.core.rag_chain import format_startup_idea
+from src.rag_startups.core.startup_metadata import StartupLookup
 from src.rag_startups.data.loader import create_documents, split_documents
 from src.rag_startups.embeddings.embedding import create_vectorstore, setup_retriever
 

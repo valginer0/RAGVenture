@@ -2,6 +2,7 @@
 
 import functools
 import time
+
 from ..utils.output_formatter import formatter
 
 

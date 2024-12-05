@@ -1,12 +1,12 @@
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 
-import pandas as pd
 import langchain
 import langsmith
+import pandas as pd
 from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings
 from langchain_core.vectorstores import VectorStoreRetriever
+from langchain_openai import OpenAIEmbeddings
 
 # Load the dataset from Kaggle (assuming you've already downloaded it)
 # data_path = "y_combinator_startups.csv"

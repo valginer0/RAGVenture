@@ -1,6 +1,6 @@
 import logging
-from typing import Dict, Set
 from datetime import datetime
+from typing import Dict, Set
 
 
 class OutputFormatter:

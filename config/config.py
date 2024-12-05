@@ -1,8 +1,9 @@
 """Configuration settings for the RAG Startups project."""
 
-from pathlib import Path
-from typing import Dict, Any
 import os
+from pathlib import Path
+from typing import Any, Dict
+
 from dotenv import load_dotenv
 
 # Load environment variables
