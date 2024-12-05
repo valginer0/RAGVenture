@@ -8,11 +8,13 @@ langchain-chroma>=0.1.0
 langsmith>=0.0.30
 python-dotenv>=1.0.0
 backoff>=2.2.1
+chromadb>=0.4.0
 
 # Development dependencies
 pytest>=7.0.0
 pytest-cov>=4.1.0
-black>=23.0.0
+black==24.2.0  # Match pre-commit version
 flake8>=6.0.0
-isort>=5.12.0
+isort>=5.13.2  # Match pre-commit version
 mypy>=1.0.0
+pre-commit>=3.5.0  # Added for automated formatting
