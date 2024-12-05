@@ -200,3 +200,4 @@ cython_debug/
 # WSL and Windows specific files
 .wslconfig
 adjust_timeout.reg
+.chroma/

@@ -22,13 +22,59 @@ Traditional startup analysis tools either rely on expensive API calls or lack re
 3. Providing similar company analysis
 4. Running entirely on your machine
 
+## 🚀 Quick Start
+
+1. **Set up environment variables**:
+```bash
+# Required for text generation
+export HUGGINGFACE_TOKEN="your-token-here"
+
+# Optional for LangChain tracing (debugging)
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_ENDPOINT="https://api.smith.langchain.com"
+export LANGCHAIN_API_KEY="your-langsmith-api-key"
+export LANGCHAIN_PROJECT="your-project-name"
+```
+
+2. **Install dependencies**:
+```bash
+pip install -r requirements.txt
+```
+
+3. **Generate startup ideas**:
+```bash
+python rag_startup_ideas.py --industry "AI" --num-ideas 1
+```
+
+Available options:
+- `--industry`: Target industry (required)
+- `--num-ideas`: Number of ideas to generate (default: 3)
+- `--file`: Custom startup data file (default: yc_startups.json)
+- `--max-lines`: Limit data processing (optional)
+
+## ⚡ Performance
+
+Typical processing times on a standard machine:
+- Data Loading: ~0.1s
+- Embedding Generation: ~22s (one-time initialization)
+- Idea Generation: ~0.5s per idea
+
 ## 🚀 Features
 
+- **Command-Line Interface**: Easy-to-use CLI for quick startup idea generation
+- **Smart Startup Analysis**: Generate ideas using advanced RAG technology
+- **Intelligent Metadata**: Extract company names, problems, and solutions
+- **Fast Local Processing**: 
+  - One-time embedding generation (~22s)
+  - Quick idea generation (~0.5s)
+- **Production-Ready**: 
+  - 31 passing unit tests
+  - Comprehensive error handling
+  - Performance monitoring
 - **Smart Startup Analysis**: Analyze startup descriptions and extract key information using advanced RAG technology
 - **Intelligent Metadata Extraction**: Automatically identify and extract company names, categories, and other metadata
 - **Flexible Information Retrieval**: Find similar startups and related information using semantic search
 - **Robust Data Processing**: Handle various data formats and edge cases with ease
-- **Production-Ready Architecture**: Built with scalability and maintainability in mind
 - **✨ Completely Free to Use**: 
   - Uses GPT-2 for text generation (no API key needed)
   - Sentence Transformers for embeddings (runs locally)

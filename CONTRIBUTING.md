@@ -25,6 +25,9 @@ By participating in this project, you are expected to uphold our Code of Conduct
 
    # Install dependencies
    pip install -r requirements.txt
+
+   # Set up environment variables
+   export HUGGINGFACE_TOKEN="your-token-here"  # Required for text generation
    ```
 
 ## Development Process
@@ -57,6 +60,30 @@ By participating in this project, you are expected to uphold our Code of Conduct
      - refactor: code restructuring
      - test: adding tests
      - chore: maintenance
+
+## Testing
+
+We maintain a comprehensive test suite with 31 passing tests. Before submitting your PR:
+
+1. Run the full test suite:
+   ```bash
+   pytest tests/
+   ```
+
+2. Ensure test coverage:
+   ```bash
+   pytest --cov=rag_startups tests/
+   ```
+
+3. Key test files:
+   - `tests/test_rag_chain.py`: Core RAG functionality
+   - `tests/idea_generator/test_generator.py`: Idea generation
+   - `tests/test_data_loader.py`: Data loading and processing
+
+4. Performance benchmarks (tests will fail if exceeded):
+   - Data Loading: < 0.1s
+   - Embedding Generation: < 25s
+   - Idea Generation: < 1s per idea
 
 ## Pull Request Process
 

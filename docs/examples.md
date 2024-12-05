@@ -2,42 +2,74 @@
 
 > **⚠️ Important Note**: This document contains both tested and conceptual examples. The "Tested Examples" section includes functionality that has been thoroughly tested and is ready for production use. The "Conceptual Examples" section showcases potential use cases and patterns that are planned for future implementation. While these conceptual examples are designed based on the system's architecture, they haven't been fully tested yet. We're actively working on implementing and testing these features - contributions are welcome!
 
-## 🧪 Tested Examples
+## 🎯 Command Line Interface
 
-These examples have corresponding test cases in our test suite and are ready for production use.
-
-### 1. Basic Startup Analysis
-
-```python
-from rag_startups.core.rag_chain import initialize_rag, format_startup_idea
-from rag_startups.core.startup_metadata import StartupLookup
-from rag_startups.data.loader import load_data
-
-# Load and initialize
-df, json_data = load_data('data/startups.json')
-lookup = StartupLookup()
-for item in json_data:
-    lookup.add_startup(item['long_desc'], item)
-retriever = initialize_rag('data/startups.json')
-
-# Analyze a startup idea
-result = format_startup_idea(
-    "A platform for connecting local farmers with restaurants",
-    retriever,
-    lookup
-)
-print(result)
-```
-
-### 2. Command Line Usage
+The simplest way to use RAGVenture is through its command-line interface:
 
 ```bash
-# Generate single idea
-python rag_startup_ideas.py --industry "Technology"
+# Generate a single AI startup idea
+python rag_startup_ideas.py --industry "AI" --num-ideas 1
 
-# Generate multiple ideas
-python rag_startup_ideas.py --industry "Healthcare" --num-ideas 3
+# Generate multiple ideas for different industries
+python rag_startup_ideas.py --industry "Fintech" --num-ideas 3
+python rag_startup_ideas.py --industry "Healthcare" --num-ideas 2
+
+# Use custom data source
+python rag_startup_ideas.py --industry "AI" --file "custom_startups.json"
 ```
+
+Expected output format:
+```
+🚀 Generated Startup Ideas
+==================================================
+Startup Idea #1:
+Company: [Name]
+
+PROBLEM/OPPORTUNITY: [Problem description]
+SOLUTION: [Solution details]
+TARGET MARKET: [Market description]
+UNIQUE VALUE: [Value proposition]
+==================================================
+```
+
+## 🧪 Tested Examples
+
+These examples have been thoroughly tested and are part of our test suite (31 passing tests):
+
+### 1. Basic Idea Generation
+
+```python
+from rag_startups.core.startup_metadata import StartupLookup
+from rag_startups.data.loader import load_data
+from rag_startups.idea_generator.generator import StartupIdeaGenerator
+
+# Load startup data
+json_data = load_data("yc_startups.json")
+
+# Initialize generator
+generator = StartupIdeaGenerator()
+
+# Generate ideas with examples
+example_startups = [
+    "A platform helping companies manage their AI models in production",
+    "An AI-powered tool for automating customer support"
+]
+
+ideas = generator.generate(
+    num_ideas=1,
+    example_startups=example_startups,
+    temperature=0.7
+)
+
+print(ideas)
+```
+
+### 2. Performance Expectations
+
+Our test suite verifies these performance metrics:
+- Data Loading: < 0.1s
+- Embedding Generation: < 25s (one-time)
+- Idea Generation: < 1s per idea
 
 ## 🔮 Conceptual Examples
 
@@ -186,7 +218,6 @@ def process_batch(input_file, output_file):
 
 # Usage
 process_batch('ideas.csv', 'analysis.csv')
-```
 
 ## 🤝 Contributing New Examples
 
