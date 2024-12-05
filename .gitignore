@@ -146,6 +146,7 @@ models/
 
 # Environment
 .env
+.venv
 .venv/
 env/
 venv/

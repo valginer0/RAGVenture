@@ -24,7 +24,19 @@ Traditional startup analysis tools either rely on expensive API calls or lack re
 
 ## 🚀 Quick Start
 
-1. **Set up environment variables**:
+1. **Create and activate virtual environment**:
+```bash
+# Create virtual environment
+python -m venv .venv
+
+# Activate virtual environment
+# On Windows:
+.venv\Scripts\activate
+# On Unix or MacOS:
+source .venv/bin/activate
+```
+
+2. **Set up environment variables**:
 ```bash
 # Required for text generation
 export HUGGINGFACE_TOKEN="your-token-here"
@@ -36,12 +48,12 @@ export LANGCHAIN_API_KEY="your-langsmith-api-key"
 export LANGCHAIN_PROJECT="your-project-name"
 ```
 
-2. **Install dependencies**:
+3. **Install dependencies**:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. **Generate startup ideas**:
+4. **Generate startup ideas**:
 ```bash
 python rag_startup_ideas.py --industry "AI" --num-ideas 1
 ```
@@ -146,8 +158,8 @@ git clone https://github.com/yourusername/RAGVenture.git
 cd RAGVenture
 
 # Create and activate a virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt

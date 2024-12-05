@@ -20,14 +20,17 @@ By participating in this project, you are expected to uphold our Code of Conduct
 4. Set up development environment:
    ```bash
    # Create and activate virtual environment
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   python -m venv .venv
+   # On Windows:
+   .venv\Scripts\activate
+   # On Unix or MacOS:
+   source .venv/bin/activate
 
-   # Install dependencies
+   # Install dependencies with development extras
    pip install -r requirements.txt
 
-   # Set up environment variables
-   export HUGGINGFACE_TOKEN="your-token-here"  # Required for text generation
+   # Install pre-commit hooks
+   pre-commit install
    ```
 
 ## Development Process
