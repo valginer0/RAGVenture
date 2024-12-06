@@ -63,7 +63,7 @@ export LANGCHAIN_PROJECT="your-project-name"
 
 3. **Generate Ideas**:
 ```bash
-python rag_startup_ideas.py --industry "AI" --num-ideas 1
+python rag_startup_ideas.py --topic "AI" --num-ideas 1
 ```
 
 ## Features & Capabilities
@@ -75,7 +75,7 @@ python rag_startup_ideas.py --industry "AI" --num-ideas 1
   - Provides structured output with problem, solution, and market analysis
 
 ### Command-Line Interface
-- --industry: Target industry (required)
+- --topic: Target domain or area (required)
 - --num-ideas: Number of ideas to generate (default: 3)
 - --file: Custom startup data file (default: yc_startups.json)
 - --max-lines: Limit data processing (optional)
