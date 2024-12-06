@@ -7,140 +7,18 @@
 [![CI](https://github.com/valginer0/rag_startups/actions/workflows/ci.yml/badge.svg)](https://github.com/valginer0/rag_startups/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/valginer0/rag_startups/graph/badge.svg)](https://codecov.io/gh/valginer0/rag_startups)
 
-RAGVenture is an intelligent startup analysis tool powered by Retrieval-Augmented Generation (RAG). It helps users explore, understand, and analyze startup companies by combining the power of large language models with precise information retrieval:
+RAGVenture is an intelligent startup idea generator powered by Retrieval-Augmented Generation (RAG). It helps entrepreneurs generate innovative startup ideas by learning from successful companies, combining the power of large language models with real-world startup data.
 
-- 🎯 **Data-Driven**: Uses real startup data to ground its analysis and suggestions
-- 🔍 **Context-Aware**: Understands and leverages patterns from successful startups
-- 💡 **Intelligent**: Combines LLM capabilities with precise information retrieval
-- 🆓 **Cost-Effective**: Runs entirely locally with no API costs
+## Why RAGVenture?
 
-## 🎯 Why RAGVenture?
+Traditional startup ideation tools either rely on expensive API calls or generate ideas without real-world context. RAGVenture solves this by:
+- Data-Driven: Learns from real startup data to ground suggestions in reality
+- Context-Aware: Understands patterns from successful startups
+- Intelligent: Uses RAG to combine LLM capabilities with precise information retrieval
+- Fast & Local: Runs entirely on your machine with no API costs (except optional Hugging Face)
+- Production-Ready: Comprehensive test suite, error handling, and monitoring
 
-Traditional startup analysis tools either rely on expensive API calls or lack real-world context. RAGVenture solves this by:
-1. Using local models (no API costs)
-2. Grounding analysis in real startup data
-3. Providing similar company analysis
-4. Running entirely on your machine
-
-## 🚀 Quick Start
-
-1. **Create and activate virtual environment**:
-```bash
-# Create virtual environment
-python -m venv .venv
-
-# Activate virtual environment
-# On Windows:
-.venv\Scripts\activate
-# On Unix or MacOS:
-source .venv/bin/activate
-```
-
-2. **Set up environment variables**:
-```bash
-# Required for text generation
-export HUGGINGFACE_TOKEN="your-token-here"
-
-# Optional for LangChain tracing (debugging)
-export LANGCHAIN_TRACING_V2=true
-export LANGCHAIN_ENDPOINT="https://api.smith.langchain.com"
-export LANGCHAIN_API_KEY="your-langsmith-api-key"
-export LANGCHAIN_PROJECT="your-project-name"
-```
-
-3. **Install dependencies**:
-```bash
-pip install -r requirements.txt
-```
-
-4. **Generate startup ideas**:
-```bash
-python rag_startup_ideas.py --industry "AI" --num-ideas 1
-```
-
-Available options:
-- `--industry`: Target industry (required)
-- `--num-ideas`: Number of ideas to generate (default: 3)
-- `--file`: Custom startup data file (default: yc_startups.json)
-- `--max-lines`: Limit data processing (optional)
-
-## ⚡ Performance
-
-Typical processing times on a standard machine:
-- Data Loading: ~0.1s
-- Embedding Generation: ~22s (one-time initialization)
-- Idea Generation: ~0.5s per idea
-
-## 🚀 Features
-
-- **Command-Line Interface**: Easy-to-use CLI for quick startup idea generation
-- **Smart Startup Analysis**: Generate ideas using advanced RAG technology
-- **Intelligent Metadata**: Extract company names, problems, and solutions
-- **Fast Local Processing**:
-  - One-time embedding generation (~22s)
-  - Quick idea generation (~0.5s)
-- **Production-Ready**:
-  - 31 passing unit tests
-  - Comprehensive error handling
-  - Performance monitoring
-- **Smart Startup Analysis**: Analyze startup descriptions and extract key information using advanced RAG technology
-- **Intelligent Metadata Extraction**: Automatically identify and extract company names, categories, and other metadata
-- **Flexible Information Retrieval**: Find similar startups and related information using semantic search
-- **Robust Data Processing**: Handle various data formats and edge cases with ease
-- **✨ Completely Free to Use**:
-  - Uses GPT-2 for text generation (no API key needed)
-  - Sentence Transformers for embeddings (runs locally)
-  - No external API dependencies or usage costs
-
-## 🐳 Docker Support
-
-The project provides Docker support for both CPU and GPU environments.
-
-### Prerequisites
-
-- Docker and Docker Compose installed
-- For GPU support:
-  - NVIDIA GPU with CUDA support
-  - [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) installed
-  - [nvidia-docker2](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#docker) installed
-
-### Running with Docker
-
-#### CPU Version (Default)
-For systems without GPU or when GPU acceleration is not needed:
-```bash
-docker-compose up app-cpu
-```
-
-#### GPU Version
-For systems with NVIDIA GPU support:
-```bash
-docker-compose up app-gpu
-```
-
-The GPU version will automatically utilize your NVIDIA GPU for faster model inference.
-
-### Building from Source with Docker
-
-To build the images manually:
-
-```bash
-# Build CPU version
-docker-compose build app-cpu
-
-# Build GPU version (requires NVIDIA Container Toolkit)
-docker-compose build app-gpu
-```
-
-### Docker Volumes
-
-The application uses Docker volumes to cache models and embeddings:
-- `model-cache`: Caches downloaded models
-- `huggingface-cache`: Caches HuggingFace model files
-
-These volumes persist between container restarts to avoid re-downloading models.
-
-## 💻 System Requirements
+## System Requirements
 
 - Python 3.11 or higher
 - 8GB RAM minimum (16GB recommended)
@@ -150,237 +28,158 @@ These volumes persist between container restarts to avoid re-downloading models.
   - macOS
   - Windows (with WSL for best performance)
 
-## 🛠️ Installation
+## Quick Start
 
+1. **Installation**:
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/RAGVenture.git
 cd RAGVenture
 
-# Create and activate a virtual environment (recommended)
+# Create virtual environment
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Activate virtual environment
+# On Windows:
+.venv\Scripts\activate
+# On Unix or MacOS:
+source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 ```
 
-## 🔧 Usage
-
-The easiest way to analyze startup descriptions is using the script:
-
+2. **Environment Setup**:
 ```bash
-# Process a startup description
-python rag_startup_ideas.py
+# Required for text generation
+export HUGGINGFACE_TOKEN="your-token-here"  # Get from huggingface.co
 
-# You can modify the question in the script:
-# question = "Generate a company idea for the Real Estate based on provided context"
+# Optional for LangChain tracing (debugging)
+export LANGCHAIN_TRACING_V2=true
+export LANGCHAIN_ENDPOINT="https://api.smith.langchain.com"
+export LANGCHAIN_API_KEY="your-langsmith-api-key"
+export LANGCHAIN_PROJECT="your-project-name"
 ```
 
-The script will:
-1. Load startup data from `yc_startups.json`
-2. Process your question using RAG
-3. Generate a response based on similar startups
+3. **Generate Ideas**:
+```bash
+python rag_startup_ideas.py --industry "AI" --num-ideas 1
+```
 
-### Data Requirements
+## Features & Capabilities
 
-RAGVenture is designed to work with startup data in JSON format. The system was developed and tested using Y Combinator (YC) startup data, which is not included in this repository due to licensing considerations.
+### Core Features
+- Intelligent Idea Generation:
+  - Uses RAG to combine LLM knowledge with real startup data
+  - Generates contextually relevant and grounded ideas
+  - Provides structured output with problem, solution, and market analysis
 
-To use RAGVenture, you have two options:
+### Command-Line Interface
+- --industry: Target industry (required)
+- --num-ideas: Number of ideas to generate (default: 3)
+- --file: Custom startup data file (default: yc_startups.json)
+- --max-lines: Limit data processing (optional)
 
-1. **Recommended: Use YC Data** (Tested and Most Reliable):
+### Technical Features
+- Smart Analysis:
+  - Semantic search for relevant examples
+  - Automatic metadata extraction
+  - Pattern recognition from successful startups
+- Performance Optimized:
+  - One-time embedding generation (~22s)
+  - Fast idea generation (~0.5s per idea)
+  - Efficient data processing (~0.1s load time)
+- Production Quality:
+  - 31 comprehensive unit tests
+  - Automated code formatting
+  - Extensive error handling
 
-   a. Obtain YC Data:
-   - Visit [Y Combinator's website](https://www.ycombinator.com/companies)
-   - Use their "Download as CSV" feature (requires login)
-   - Convert the CSV to JSON using our conversion script:
+## Performance
+
+Typical processing times on a standard machine:
+- Initial Setup: ~22s (one-time embedding generation)
+- Data Loading: ~0.1s
+- Idea Generation: ~0.5s per idea
+
+## Docker Support
+
+For containerized deployment, we provide both CPU and GPU support.
+
+### Prerequisites
+- Docker and Docker Compose
+- For GPU support:
+  - NVIDIA GPU with CUDA
+  - NVIDIA Container Toolkit
+  - nvidia-docker2
+
+### Quick Start with Docker
+```bash
+# CPU Version
+docker-compose up app-cpu
+
+# GPU Version (with NVIDIA support)
+docker-compose up app-gpu
+```
+
+## Development Setup
+
+1. Clone and setup:
+```bash
+git clone https://github.com/yourusername/RAGVenture.git
+cd RAGVenture
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
+2. Install development dependencies:
+```bash
+pip install -r requirements.txt
+pre-commit install  # Sets up automatic code formatting
+```
+
+3. Run tests:
+```bash
+pytest tests/  # Should show 31 passing tests
+```
+
+## Data Requirements
+
+RAGVenture works with startup data in JSON format. Two options:
+
+1. Use YC Data (Recommended):
+   - Download from [Y Combinator](https://www.ycombinator.com/companies)
+   - Convert CSV to JSON:
      ```bash
-     # Convert YC data to JSON
-     python -m rag_startups.data.convert_yc_data path/to/yc_data.csv -o startups.json
+     python -m rag_startups.data.convert_yc_data input.csv -o startups.json
      ```
 
-   The conversion script handles:
-   - Cleaning and formatting descriptions
-   - Extracting years from batch information
-   - Removing entries without names or descriptions
-   - Proper UTF-8 encoding
+2. Use Custom Data:
+   - Prepare JSON file with required fields
+   - See `docs/data_format.md` for schema
 
-   Expected CSV format from YC:
-   ```csv
-   Company Name,Description,long_desc,Category,Batch
-   Airbnb,Marketplace for unique accommodations...,Marketplace,S08
-   ```
+## Troubleshooting
 
-   b. Example YC Data Format:
-   ```json
-   [
-     {
-       "name": "Airbnb",
-       "description": "Marketplace for unique accommodations",
-       "long_desc": "Founded in August of 2008 and based in San Francisco, California, Airbnb is a trusted community marketplace for people to list, discover, and book unique accommodations around the world. The platform connects hosts and travelers, offering unique spaces for memorable experiences.",
-       "category": "Marketplace",
-       "year": "2008"
-     },
-     {
-       "name": "Dropbox",
-       "description": "Cloud storage and synchronization",
-       "long_desc": "Dropbox is a file hosting service that offers cloud storage, file synchronization, and client software. The service enables users to store and share files across devices, with features for both individual users and enterprise customers.",
-       "category": "Enterprise Software",
-       "year": "2007"
-     }
-   ]
-   ```
+1. Embedding Generation Time:
+   - First run takes ~22s to generate embeddings
+   - Subsequent runs use cached embeddings
+   - GPU can significantly speed up this process
 
-2. **Alternative: Use Your Own Data**:
-   If you prefer to use your own dataset, prepare it in the following format shown above.
+2. Common Issues:
+   - Missing HUGGINGFACE_TOKEN: Sign up at huggingface.co
+   - Memory errors: Reduce batch size with --max-lines
+   - GPU errors: Ensure CUDA toolkit is properly installed
 
-For testing purposes, we provide a minimal sample dataset in `data/sample_startups.json` with a few fictional entries, but for best results, we recommend using the YC dataset.
+## Documentation
 
-### Example Output
+- `docs/api.md`: API documentation
+- `docs/examples.md`: Usage examples
+- `docs/data_format.md`: Data schema
+- `CONTRIBUTING.md`: Development guidelines
 
-```bash
-$ python rag_startup_ideas.py
+## Contributing
 
-{
-    "name": "RentEase",
-    "description": "A platform for renting homes and apartments globally",
-    "long_desc": "RentEase is a comprehensive rental platform that connects property owners with potential tenants worldwide. The platform features advanced search capabilities, secure payment processing, virtual tours, and a review system to build trust in the community. Property owners can easily list their spaces while renters can find their ideal accommodations.",
-    "category": "Real Estate",
-    "year": "2024",
-    "similar_companies": [
-        {
-            "name": "Airbnb",
-            "description": "Trusted marketplace for unique accommodations worldwide",
-            "similarity_score": 0.89
-        },
-        {
-            "name": "VRBO",
-            "description": "Vacation rental marketplace connecting homeowners and travelers",
-            "similarity_score": 0.82
-        },
-        {
-            "name": "Zillow",
-            "description": "Real estate and rental marketplace platform",
-            "similarity_score": 0.75
-        }
-    ]
-}
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 
-Using the Python API:
-```python
-from rag_startups.core.rag_chain import initialize_rag, format_startup_idea
-from rag_startups.core.startup_metadata import StartupLookup
+## License
 
-# Load startup data and initialize the system
-data = load_startup_data('data/startups.json')  # Load your startup data
-lookup = StartupLookup()
-for item in data:
-    lookup.add_startup(item['long_desc'], item)  # Use long_desc for RAG processing
-
-# Initialize RAG system
-retriever = initialize_rag('data/startups.json')
-
-# Analyze a startup
-result = format_startup_idea(
-    "An AI-powered customer support platform",
-    retriever,
-    lookup
-)
-print(result)
-```
-
-### Python API
-
-For more advanced usage, you can use the Python API:
-
-```python
-from rag_startups.core.rag_chain import initialize_rag, format_startup_idea
-from rag_startups.core.startup_metadata import StartupLookup
-
-# Load startup data and initialize the system
-data = load_startup_data('data/startups.json')  # Load your startup data
-lookup = StartupLookup()
-for item in data:
-    lookup.add_startup(item['long_desc'], item)  # Use long_desc for RAG processing
-
-# Initialize RAG system
-retriever = initialize_rag('data/startups.json')
-
-# Analyze a startup
-result = format_startup_idea(
-    "An AI-powered customer support platform",
-    retriever,
-    lookup
-)
-print(result)
-```
-
-## 🏗️ Architecture
-
-RAGVenture uses a modular architecture:
-
-- `core/`: Core RAG functionality and startup analysis
-- `data/`: Data loading and processing utilities
-- `embeddings/`: Vector embeddings and similarity search
-- `utils/`: Helper functions and utilities
-
-## 📚 Documentation
-
-For detailed documentation, see:
-- [API Reference](docs/api.md)
-- [Configuration Guide](docs/configuration.md)
-- [Advanced Usage Examples](docs/examples.md)
-
-## 🧪 Testing
-
-```bash
-# Run all tests
-pytest
-
-# Run specific test file
-pytest tests/test_real_data.py
-```
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on:
-- Code of Conduct
-- Development setup
-- Submission guidelines
-- Code style
-- Testing requirements
-
-## ❓ Troubleshooting
-
-### Common Issues
-
-1. **ModuleNotFoundError**:
-   ```
-   ModuleNotFoundError: No module named 'transformers'
-   ```
-   Solution: Ensure you've installed all requirements:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **CUDA/GPU Issues**:
-   - By default, RAGVenture runs on CPU
-   - For GPU support, install PyTorch with CUDA (see PyTorch website)
-
-3. **Memory Issues**:
-   - Reduce batch size in config
-   - Use smaller model variants
-   - Process data in smaller chunks
-
-For more issues, please check our [Issues](https://github.com/valginer0/rag_startups/issues) page.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Built with [LangChain](https://github.com/hwchase17/langchain)
-- Powered by [Sentence Transformers](https://www.sbert.net/)
-- Inspired by Y Combinator startups
+This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.

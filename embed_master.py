@@ -108,6 +108,14 @@ def get_prompt_content(prompt, question, context_docs):
 def rag_chain_local(question, generator, prompt, retriever, lookup=None, num_ideas=3):
     try:
         context_docs = retriever.invoke(question)
+        logging.debug(f"Retrieved documents: {context_docs}")
+        logging.debug(
+            f"First document type: {type(context_docs[0] if context_docs else None)}"
+        )
+        logging.debug(
+            f"First document content: {context_docs[0].page_content if context_docs else None}"
+        )
+
         formatted_ideas = []
         seen_companies = set()
 

@@ -20,6 +20,10 @@ LOCAL_LANGUAGE_MODEL = "gpt2"
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 200
 
+# Retriever settings
+DEFAULT_RETRIEVER_TOP_K = 4  # Number of documents to retrieve
+DEFAULT_SEARCH_TYPE = "similarity"  # Type of search to perform
+
 # Data processing
 MAX_LINES = 500_000
 

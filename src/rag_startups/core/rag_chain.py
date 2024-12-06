@@ -55,6 +55,15 @@ def format_startup_idea(
     description: str, retriever: Any, startup_lookup: Optional[Any] = None
 ) -> dict:
     """Format a startup description into a structured format."""
+    # Ensure description is a string
+    if not isinstance(description, str):
+        if hasattr(description, "page_content"):
+            description = description.page_content
+        elif hasattr(description, "__str__"):
+            description = str(description)
+        else:
+            raise ValueError(f"Cannot process description of type {type(description)}")
+
     # Get similar description from RAG if retriever is available
     similar_desc = (
         get_similar_description(description, retriever) if retriever else None

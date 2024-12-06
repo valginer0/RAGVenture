@@ -24,10 +24,10 @@ def parse_arguments():
 
     # Required arguments
     parser.add_argument(
-        "--industry",
+        "--topic",
         type=str,
         required=True,
-        help="Industry to generate startup ideas for",
+        help="Topic or domain to generate startup ideas for (e.g., 'healthcare', 'education technology')",
     )
 
     # Optional arguments
@@ -66,7 +66,13 @@ if __name__ == "__main__":
         )
         exit(1)
 
-    question = f"Generate a company idea for the {args.industry} industry based on provided context"
+    # Construct a natural query based on the topic
+    topic = args.topic.strip().lower()
+    question = (
+        f"Find innovative startup ideas in {topic}"
+        if " " in topic  # If it's a compound phrase like "education technology"
+        else f"Find innovative startup ideas in the {topic} domain"
+    )
 
     prompt_messages = [
         (

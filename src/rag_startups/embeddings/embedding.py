@@ -7,7 +7,11 @@ from langchain.docstore.document import Document
 from langchain_community.vectorstores.chroma import Chroma
 from sentence_transformers import SentenceTransformer
 
-from config.config import DEFAULT_EMBEDDING_MODEL
+from config.config import (
+    DEFAULT_EMBEDDING_MODEL,
+    DEFAULT_RETRIEVER_TOP_K,
+    DEFAULT_SEARCH_TYPE,
+)
 
 from ..utils.exceptions import EmbeddingError
 from ..utils.timing import timing_decorator
@@ -93,17 +97,25 @@ def create_vectorstore(
 
 
 @timing_decorator
-def setup_retriever(vectorstore: Chroma) -> Union[None, Any]:
+def setup_retriever(
+    vectorstore: Chroma,
+    search_type: str = DEFAULT_SEARCH_TYPE,
+    top_k: int = DEFAULT_RETRIEVER_TOP_K,
+) -> Union[None, Any]:
     """
     Set up a retriever from a vector store.
 
     Args:
         vectorstore: Chroma vector store
+        search_type: Type of search to perform (default: from config)
+        top_k: Number of documents to retrieve (default: from config)
 
     Returns:
         Retriever object or None if setup fails
     """
     try:
-        return vectorstore.as_retriever()
+        return vectorstore.as_retriever(
+            search_type=search_type, search_kwargs={"k": top_k}
+        )
     except Exception as e:
         raise EmbeddingError(f"Failed to set up retriever: {e}")
