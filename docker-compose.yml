@@ -12,7 +12,7 @@ services:
       - LOCAL_LANGUAGE_MODEL=gpt2
     ports:
       - "8000:8000"  # If we add a web interface later
-    command: python rag_startup_ideas.py --industry "AI/ML" --num-ideas 3
+    command: python rag_startup_ideas.py --topic "AI/ML" --num-ideas 3
 
   app-gpu:
     build:
@@ -31,7 +31,7 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-    command: python rag_startup_ideas.py --industry "AI/ML" --num-ideas 3
+    command: python rag_startup_ideas.py --topic "AI/ML" --num-ideas 3
 
 volumes:
   model-cache:  # Persistent volume for sentence transformers cache

@@ -8,14 +8,14 @@ The simplest way to use RAGVenture is through its command-line interface:
 
 ```bash
 # Generate a single AI startup idea
-python rag_startup_ideas.py --industry "AI" --num-ideas 1
+python rag_startup_ideas.py --topic "AI" --num-ideas 1
 
-# Generate multiple ideas for different industries
-python rag_startup_ideas.py --industry "Fintech" --num-ideas 3
-python rag_startup_ideas.py --industry "Healthcare" --num-ideas 2
+# Generate multiple ideas for different domains
+python rag_startup_ideas.py --topic "Fintech" --num-ideas 3
+python rag_startup_ideas.py --topic "Healthcare" --num-ideas 2
 
 # Use custom data source
-python rag_startup_ideas.py --industry "AI" --file "custom_startups.json"
+python rag_startup_ideas.py --topic "AI" --file "custom_startups.json"
 ```
 
 Expected output format:
