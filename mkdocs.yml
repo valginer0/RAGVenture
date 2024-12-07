@@ -52,8 +52,6 @@ markdown_extensions:
   - pymdownx.snippets:
       base_path: ["."]
       check_paths: true
-      auto_append:
-        - includes/abbreviations.md
   - pymdownx.superfences
   - admonition
   - pymdownx.details
@@ -69,5 +67,5 @@ nav:
     - Configuration: configuration.md
     - Examples: examples.md
   - API Reference: api.md
-  - Contributing: CONTRIBUTING.md
-  - Code of Conduct: CODE_OF_CONDUCT.md
+  - Contributing: ../CONTRIBUTING.md
+  - Code of Conduct: ../CODE_OF_CONDUCT.md
