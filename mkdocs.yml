@@ -1,6 +1,7 @@
 site_name: RAG Startups
 site_description: Documentation for the RAG-based startup ideas generation project
 repo_url: https://github.com/yourusername/rag_startups
+docs_dir: docs
 
 theme:
   name: material
@@ -30,6 +31,7 @@ theme:
 plugins:
   - search
   - mkdocstrings:
+      default_handler: python
       handlers:
         python:
           paths: [src]
@@ -59,5 +61,5 @@ nav:
     - Configuration: configuration.md
     - Examples: examples.md
   - API Reference: api.md
-  - Contributing: CONTRIBUTING.md
-  - Code of Conduct: CODE_OF_CONDUCT.md
+  - Contributing: ../CONTRIBUTING.md
+  - Code of Conduct: ../CODE_OF_CONDUCT.md
