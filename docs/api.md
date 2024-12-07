@@ -6,47 +6,21 @@ This document provides detailed information about RAGVenture's Python API.
 
 ### StartupLookup
 
-```python
-from rag_startups.core.startup_metadata import StartupLookup
+::: rag_startups.core.startup_metadata.StartupLookup
+    handler: python
+    options:
+      show_root_heading: true
+      show_source: true
+      heading_level: 3
 
-lookup = StartupLookup()
-```
+### RAG Components
 
-The `StartupLookup` class manages startup metadata and provides fast lookup capabilities.
-
-#### Methods
-
-- `add_startup(description: str, metadata: dict) -> None`
-  - Adds a startup to the lookup index
-  - Parameters:
-    - `description`: Startup description text
-    - `metadata`: Dictionary containing startup metadata (name, category, year)
-
-- `get_startup_by_description(description: str) -> Optional[dict]`
-  - Retrieves startup metadata using description as key
-  - Returns `None` if no match is found
-
-### RAG Chain
-
-```python
-from rag_startups.core.rag_chain import initialize_rag, format_startup_idea
-```
-
-#### Functions
-
-- `initialize_rag(file_path: str) -> BaseRetriever`
-  - Initializes the RAG system with startup data
-  - Parameters:
-    - `file_path`: Path to JSON file containing startup data
-  - Returns: Configured retriever for similarity search
-
-- `format_startup_idea(description: str, retriever: BaseRetriever, lookup: StartupLookup) -> dict`
-  - Analyzes a startup description and returns formatted results
-  - Parameters:
-    - `description`: Startup idea to analyze
-    - `retriever`: Initialized retriever from `initialize_rag()`
-    - `lookup`: Initialized StartupLookup instance
-  - Returns: Dictionary containing analysis results
+::: rag_startups.rag_startup_ideas
+    handler: python
+    options:
+      show_root_heading: true
+      show_source: true
+      heading_level: 3
 
 ### Data Loading
 
@@ -129,3 +103,12 @@ except FileNotFoundError:
 except json.JSONDecodeError:
     print("Invalid JSON format in startup data file")
 ```
+
+## Utility Functions
+
+::: rag_startups.utils
+    handler: python
+    options:
+      show_root_heading: true
+      show_source: true
+      heading_level: 3
