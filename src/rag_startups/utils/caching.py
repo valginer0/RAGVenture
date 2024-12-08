@@ -1,174 +1,175 @@
-"""Caching utilities for external API calls."""
-
 import json
 import logging
-import os
-from datetime import datetime, timedelta
 from functools import wraps
-from typing import Any, Callable, Optional, Union
+from threading import Lock
+from typing import Any, Callable, Optional
 
+import fakeredis
 import redis
 from cachetools import TTLCache
-from dotenv import load_dotenv
-
-load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-# Try to connect to Redis, fall back to in-memory cache if unavailable
-try:
-    # Try localhost first
-    redis_client = redis.Redis(
-        host=os.getenv("REDIS_HOST", "localhost"),
-        port=int(os.getenv("REDIS_PORT", 6379)),
-        decode_responses=True,
-    )
-    redis_client.ping()
-    logger.info("Using Redis for caching")
-    USING_REDIS = True
-except (redis.ConnectionError, redis.ResponseError):
+# Global variables and locks
+_redis_client = None
+_redis_enabled = False
+_redis_lock = Lock()
+_redis_host = None  # Track Redis host changes
+
+
+def get_redis_client():
+    """Get Redis client, falling back to fakeredis if needed."""
+    global _redis_client, _redis_enabled, _redis_host
+
     try:
-        # Try WSL IP if localhost fails
-        # Common WSL2 IP patterns
-        wsl_hosts = [
-            "172.17.208.1",
-            "172.17.0.1",
-            "172.18.0.1",
-            "172.19.0.1",
-            os.getenv("WSL_HOST"),
-        ]
-        connected = False
+        import os
 
-        for host in wsl_hosts:
-            if not host:
-                continue
-            try:
-                redis_client = redis.Redis(
-                    host=host,
-                    port=int(os.getenv("REDIS_PORT", 6379)),
-                    decode_responses=True,
-                )
-                redis_client.ping()
-                logger.info(f"Using Redis for caching on WSL host: {host}")
-                USING_REDIS = True
-                connected = True
-                break
-            except (redis.ConnectionError, redis.ResponseError):
-                continue
+        redis_host = os.environ.get("REDIS_HOST")
 
-        if not connected:
-            raise Exception("Could not connect to Redis on any WSL host")
+        # Check if Redis host has changed
+        if redis_host != _redis_host:
+            _redis_client = None  # Force new connection
+            _redis_host = redis_host
 
+        if redis_host and _redis_client is None:
+            # Try to connect to real Redis
+            client = redis.Redis(
+                host=redis_host,
+                port=int(os.environ.get("REDIS_PORT", 6379)),
+                decode_responses=True,
+            )
+            # Test connection
+            client.ping()
+            _redis_enabled = True
+            _redis_client = client
+            return client
     except Exception as e:
-        logger.warning(f"Redis not available, using in-memory cache. Error: {str(e)}")
-        USING_REDIS = False
-        # Fallback to in-memory cache (1000 items, 24 hour TTL)
-        memory_cache = TTLCache(maxsize=1000, ttl=24 * 60 * 60)
+        logger.warning(f"Failed to connect to Redis: {e}, using fakeredis")
+        _redis_enabled = False
+        _redis_client = None
+
+    # Fallback to fakeredis
+    if _redis_client is None:
+        _redis_enabled = False
+        _redis_client = fakeredis.FakeRedis(decode_responses=True)
+    return _redis_client
+
+
+def _get_cache_key(
+    func: Callable, args: tuple, kwargs: dict, prefix: Optional[str] = None
+) -> str:
+    """Generate a cache key for the given function and arguments."""
+    if prefix:
+        key_parts = [str(arg) for arg in args]
+        key_parts.extend(f"{k}={v}" for k, v in sorted(kwargs.items()))
+        return f"{prefix}:{func.__name__}:{':'.join(key_parts)}"
+    return f"{func.__name__}:{str(args)}:{str(kwargs)}"
 
 
 def cache_result(
-    prefix: str,
-    ttl: int = 24 * 60 * 60,  # 24 hours in seconds
-    key_generator: Optional[Callable] = None,
+    prefix: str = None, ttl_seconds: int = 3600, ttl: Optional[int] = None
 ) -> Callable:
-    """Cache decorator for function results.
+    """Cache function results using Redis or TTLCache as fallback.
 
     Args:
-        prefix: Prefix for cache key
-        ttl: Time to live in seconds
-        key_generator: Optional function to generate cache key
+        prefix: Optional prefix for cache keys
+        ttl_seconds: Time to live for cached results in seconds (default: 1 hour)
+        ttl: Alias for ttl_seconds for backward compatibility
 
     Returns:
-        Decorated function
+        Decorator function that handles caching
     """
+    # Use ttl if provided, otherwise use ttl_seconds
+    ttl_value = ttl if ttl is not None else ttl_seconds
 
     def decorator(func: Callable) -> Callable:
+        # Create a TTLCache specific to this function
+        local_cache = TTLCache(maxsize=1000, ttl=ttl_value)
+        local_lock = Lock()
+        last_redis_host = None  # Track Redis host for this decorator
+
         @wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            # Generate cache key
-            if key_generator:
-                cache_key = f"{prefix}:{key_generator(*args, **kwargs)}"
-            else:
-                # Default key from args and kwargs
-                key_parts = [str(arg) for arg in args]
-                key_parts.extend(f"{k}={v}" for k, v in sorted(kwargs.items()))
-                cache_key = f"{prefix}:{':'.join(key_parts)}"
+            nonlocal last_redis_host
 
-            # Try to get from cache
-            if USING_REDIS:
-                cached = redis_client.get(cache_key)
-                if cached:
-                    return json.loads(cached)
-            else:
-                if cache_key in memory_cache:
-                    return memory_cache[cache_key]
+            # Check Redis connection and clear local cache if host changed
+            global _redis_enabled, _redis_client, _redis_host
+            _redis_client = get_redis_client()
 
-            # Execute function if not cached
-            result = func(*args, **kwargs)
+            if _redis_host != last_redis_host:
+                local_cache.clear()  # Clear local cache when Redis host changes
+                last_redis_host = _redis_host
 
-            # Cache the result
-            try:
-                if USING_REDIS:
-                    redis_client.setex(cache_key, ttl, json.dumps(result))
-                else:
-                    memory_cache[cache_key] = result
-            except Exception as e:
-                logger.error(f"Error caching result: {e}")
+            cache_key = _get_cache_key(func, args, kwargs, prefix)
 
-            return result
+            # Try Redis first if enabled
+            if _redis_enabled and _redis_client is not None:
+                try:
+                    cached = _redis_client.get(cache_key)
+                    if cached:
+                        return json.loads(cached)
+
+                    with _redis_lock:
+                        # Double-check after acquiring lock
+                        cached = _redis_client.get(cache_key)
+                        if cached:
+                            return json.loads(cached)
+
+                        # Compute and store in Redis
+                        result = func(*args, **kwargs)
+                        _redis_client.setex(cache_key, ttl_value, json.dumps(result))
+                        return result
+                except Exception as e:
+                    logger.warning(f"Redis error: {str(e)}, falling back to TTLCache")
+                    _redis_enabled = False
+
+            # Use TTLCache as fallback
+            with local_lock:
+                try:
+                    return local_cache[cache_key]
+                except KeyError:
+                    # Key not in cache or expired, compute new value
+                    result = func(*args, **kwargs)
+                    local_cache[cache_key] = result
+                    return result
 
         return wrapper
 
     return decorator
 
 
-def clear_cache(prefix: Optional[str] = None) -> None:
-    """Clear cache entries.
-
-    Args:
-        prefix: Optional prefix to clear specific entries
-    """
+def clear_cache(prefix: str = None) -> None:
+    """Clear all cached values or those matching prefix."""
     try:
-        if USING_REDIS:
+        if _redis_enabled and _redis_client is not None:
             if prefix:
-                keys = redis_client.keys(f"{prefix}:*")
+                pattern = f"{prefix}:*"
+                keys = _redis_client.keys(pattern)
                 if keys:
-                    redis_client.delete(*keys)
+                    _redis_client.delete(*keys)
             else:
-                redis_client.flushdb()
-        else:
-            if prefix:
-                keys_to_delete = [
-                    k for k in memory_cache.keys() if k.startswith(f"{prefix}:")
-                ]
-                for k in keys_to_delete:
-                    del memory_cache[k]
-            else:
-                memory_cache.clear()
+                _redis_client.flushdb()
     except Exception as e:
         logger.error(f"Error clearing cache: {e}")
 
 
 def get_cache_stats() -> dict:
-    """Get cache statistics."""
+    """Get statistics about the cache."""
     try:
-        if USING_REDIS:
-            info = redis_client.info()
+        if _redis_enabled and _redis_client is not None:
+            info = _redis_client.info()
             return {
                 "type": "redis",
-                "keys": redis_client.dbsize(),
-                "used_memory": info["used_memory_human"],
-                "hits": info["keyspace_hits"],
-                "misses": info["keyspace_misses"],
+                "keys": _redis_client.dbsize(),
+                "memory": info.get("used_memory_human"),
+                "peak_memory": info.get("used_memory_peak_human"),
             }
         else:
-            return {
-                "type": "memory",
-                "keys": len(memory_cache),
-                "max_size": memory_cache.maxsize,
-                "currsize": memory_cache.currsize,
-                "ttl": memory_cache.ttl,
-            }
+            return {"type": "memory", "status": "disabled"}
     except Exception as e:
         logger.error(f"Error getting cache stats: {e}")
-        return {"error": str(e)}
+        return {"type": "unknown", "error": str(e)}
+
+
+# Initialize Redis client
+_redis_client = get_redis_client()

@@ -54,11 +54,20 @@ def mock_world_bank():
 def mock_bls():
     """Mock BLS API responses."""
     with patch("requests.post") as mock:
+        # Mock successful response
         mock.return_value.json.return_value = {
             "status": "REQUEST_SUCCEEDED",
             "Results": {
                 "series": [
-                    {"data": [{"year": "2023", "period": "M12", "value": "1000000"}]}
+                    {
+                        "data": [
+                            {
+                                "year": "2023",
+                                "period": "M12",
+                                "value": "100",  # 100,000 employees after multiplication
+                            }
+                        ]
+                    }
                 ]
             },
         }

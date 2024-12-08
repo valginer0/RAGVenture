@@ -31,6 +31,8 @@ dependencies = [
     "requests>=2.31.0",
     "redis>=5.0.1",
     "cachetools>=5.3.2",  # For in-memory caching fallback
+    "fakeredis>=2.20.0",  # For development Redis server
+    "redis-server-bin>=0.1.1",  # Standalone Redis server
 ]
 
 [project.optional-dependencies]
