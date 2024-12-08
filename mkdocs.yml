@@ -11,6 +11,7 @@ theme:
     - navigation.tracking
     - navigation.sections
     - navigation.expand
+    - navigation.indexes
     - navigation.top
     - search.highlight
     - search.share
@@ -65,6 +66,7 @@ markdown_extensions:
 nav:
   - Home: index.md
   - User Guide:
+    - Overview: user-guide/index.md
     - Configuration: configuration.md
     - Examples: examples.md
   - API Reference: api.md
