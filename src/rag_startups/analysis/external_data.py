@@ -109,7 +109,7 @@ class BLSData:
         3. Save the API key in your .env file as BLS_API_KEY=your_key_here
         """
 
-    def get_employment_data(self, series_id: str) -> int:
+    def get_employment_data(self, series_id: str) -> Dict[str, Union[int, str]]:
         """Get employment data for a specific series ID."""
         try:
             response = self._make_request(series_id)
@@ -118,13 +118,32 @@ class BLSData:
                 if series_data:
                     # Convert thousands to actual number and round to nearest integer
                     latest_value = float(series_data[0]["value"]) * 1000
-                    return int(round(latest_value))
-            return 0
+                    return {
+                        "employment": int(round(latest_value)),
+                        "year": int(series_data[0]["year"]),
+                        "period": series_data[0]["period"],
+                    }
+            return {
+                "employment": 0,
+                "year": datetime.datetime.now().year,
+                "period": "M01",
+            }
         except Exception as e:
             logger.error(f"Error fetching BLS data: {str(e)}")
-            return 0
+            return {
+                "employment": 0,
+                "year": datetime.datetime.now().year,
+                "period": "M01",
+            }
 
     def _make_request(self, series_id: str) -> Dict:
+        """Make request to BLS API."""
+        if not self.api_key:
+            logger.warning(
+                "BLS API key not found. Use register_api_key() for instructions."
+            )
+            return {}
+
         headers = {"Content-type": "application/json"}
         data = {
             "seriesid": [series_id],
@@ -180,9 +199,9 @@ class BLSData:
             employment_data = self.get_employment_data(series_id)
 
             return {
-                "employment": employment_data,
-                "year": end_year,
-                "period": "Annual",
+                "employment": employment_data["employment"],
+                "year": employment_data["year"],
+                "period": employment_data["period"],
             }
         except Exception as e:
             logger.error(f"Error fetching BLS data: {e}")
