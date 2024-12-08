@@ -17,20 +17,53 @@ logger = logging.getLogger(__name__)
 
 # Try to connect to Redis, fall back to in-memory cache if unavailable
 try:
+    # Try localhost first
     redis_client = redis.Redis(
         host=os.getenv("REDIS_HOST", "localhost"),
         port=int(os.getenv("REDIS_PORT", 6379)),
-        db=0,
         decode_responses=True,
     )
     redis_client.ping()
     logger.info("Using Redis for caching")
     USING_REDIS = True
 except (redis.ConnectionError, redis.ResponseError):
-    logger.warning("Redis not available, using in-memory cache")
-    USING_REDIS = False
-    # Fallback to in-memory cache (1000 items, 24 hour TTL)
-    memory_cache = TTLCache(maxsize=1000, ttl=24 * 60 * 60)
+    try:
+        # Try WSL IP if localhost fails
+        # Common WSL2 IP patterns
+        wsl_hosts = [
+            "172.17.208.1",
+            "172.17.0.1",
+            "172.18.0.1",
+            "172.19.0.1",
+            os.getenv("WSL_HOST"),
+        ]
+        connected = False
+
+        for host in wsl_hosts:
+            if not host:
+                continue
+            try:
+                redis_client = redis.Redis(
+                    host=host,
+                    port=int(os.getenv("REDIS_PORT", 6379)),
+                    decode_responses=True,
+                )
+                redis_client.ping()
+                logger.info(f"Using Redis for caching on WSL host: {host}")
+                USING_REDIS = True
+                connected = True
+                break
+            except (redis.ConnectionError, redis.ResponseError):
+                continue
+
+        if not connected:
+            raise Exception("Could not connect to Redis on any WSL host")
+
+    except Exception as e:
+        logger.warning(f"Redis not available, using in-memory cache. Error: {str(e)}")
+        USING_REDIS = False
+        # Fallback to in-memory cache (1000 items, 24 hour TTL)
+        memory_cache = TTLCache(maxsize=1000, ttl=24 * 60 * 60)
 
 
 def cache_result(

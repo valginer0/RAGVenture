@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import pandas as pd
-from langchain.docstore.document import Document
+from langchain_community.docstore.document import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from config.config import CHUNK_OVERLAP, CHUNK_SIZE

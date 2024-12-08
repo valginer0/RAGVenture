@@ -10,10 +10,10 @@ import requests
 import wbdata
 from dotenv import load_dotenv
 
-from ..utils.caching import cache_result
+# Load environment variables from both .env and system
+load_dotenv(override=True)  # This will load .env and not override existing env vars
 
-# Load environment variables
-load_dotenv()
+from ..utils.caching import cache_result
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -65,14 +65,10 @@ class WorldBankData:
             for indicator in self.indicators:
                 try:
                     # World Bank API expects dates in format "YYYY"
-                    result = wbdata.get_data(
-                        indicator, 
-                        country=country, 
-                        date=str(year)
-                    )
+                    result = wbdata.get_data(indicator, country=country, date=str(year))
                     if result and len(result) > 0:
                         # Get the most recent value
-                        data[indicator] = result[0]['value']
+                        data[indicator] = result[0]["value"]
                 except Exception as e:
                     logger.warning(f"Failed to fetch indicator {indicator}: {e}")
                     data[indicator] = 0
@@ -93,7 +89,16 @@ class BLSData:
     def __init__(self):
         """Initialize BLS client with API key."""
         self.api_key = os.getenv("BLS_API_KEY")
+        if self.api_key:
+            logger.debug("BLS API key found in environment")
+        else:
+            logger.warning("BLS API key not found in environment")
         self.base_url = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
+        self.series_mapping = {
+            # NAICS 5112 - Software Publishers
+            # CEU5051200001 - Software Publishers, All Employees, Thousands
+            "5112": "CEU5051200001",
+        }
 
     def register_api_key(self) -> str:
         """Get instructions for BLS API key registration."""
@@ -104,17 +109,46 @@ class BLSData:
         3. Save the API key in your .env file as BLS_API_KEY=your_key_here
         """
 
+    def get_employment_data(self, series_id: str) -> int:
+        """Get employment data for a specific series ID."""
+        try:
+            response = self._make_request(series_id)
+            if response and response.get("Results", {}).get("series"):
+                series_data = response["Results"]["series"][0]["data"]
+                if series_data:
+                    # Convert thousands to actual number and round to nearest integer
+                    latest_value = float(series_data[0]["value"]) * 1000
+                    return int(round(latest_value))
+            return 0
+        except Exception as e:
+            logger.error(f"Error fetching BLS data: {str(e)}")
+            return 0
+
+    def _make_request(self, series_id: str) -> Dict:
+        headers = {"Content-type": "application/json"}
+        data = {
+            "seriesid": [series_id],
+            "startyear": str(datetime.datetime.now().year - 1),
+            "endyear": str(datetime.datetime.now().year),
+            "registrationkey": self.api_key,
+        }
+
+        response = requests.post(self.base_url, json=data, headers=headers)
+        response.raise_for_status()
+
+        return response.json()
+
     @cache_result("bls", ttl=12 * 60 * 60)  # Cache for 12 hours
-    def get_employment_data(
+    def get_industry_employment_data(
         self,
-        series_id: str,
+        industry_code: str,
         start_year: Optional[int] = None,
         end_year: Optional[int] = None,
     ) -> Dict[str, Union[int, float]]:
         """Get employment data from BLS.
 
         Args:
-            series_id: BLS series identifier
+            industry_code: Industry code (NAICS)
             start_year: Start year for data (default: previous year)
             end_year: End year for data (default: current year)
 
@@ -133,29 +167,23 @@ class BLSData:
             if end_year is None:
                 end_year = datetime.datetime.now().year
 
-            headers = {"Content-type": "application/json"}
-            data = {
-                "seriesid": [series_id],
-                "startyear": str(start_year),
-                "endyear": str(end_year),
-                "registrationkey": self.api_key,
-            }
-
-            response = requests.post(self.base_url, json=data, headers=headers)
-            response.raise_for_status()
-
-            results = response.json()
-            if results.get("status") == "REQUEST_SUCCEEDED":
-                series_data = results["Results"]["series"][0]["data"]
-                return {
-                    "employment": int(series_data[0]["value"]),
-                    "year": int(series_data[0]["year"]),
-                    "period": series_data[0]["period"],
-                }
-            else:
-                logger.error(f"BLS API error: {results.get('message')}")
+            # Get series ID from mapping
+            series_id = self.series_mapping.get(industry_code)
+            if not series_id:
+                logger.warning(
+                    f"No BLS series mapping found for industry code {industry_code}"
+                )
                 return {}
 
+            logger.debug(f"Using BLS series ID: {series_id}")
+
+            employment_data = self.get_employment_data(series_id)
+
+            return {
+                "employment": employment_data,
+                "year": end_year,
+                "period": "Annual",
+            }
         except Exception as e:
             logger.error(f"Error fetching BLS data: {e}")
             return {}
@@ -181,8 +209,8 @@ def get_industry_analysis(
     # Get World Bank data
     wb_data = wb.get_industry_metrics(country, year)
 
-    # Get BLS data if available
-    bls_data = bls.get_employment_data(f"CEU{industry_code}00000001")
+    # Get BLS employment data
+    bls_data = bls.get_industry_employment_data(industry_code)
 
     # Calculate market size
     gdp = wb_data.get("gdp", 0)
