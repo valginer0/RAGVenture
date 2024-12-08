@@ -2,6 +2,34 @@
 
 This document provides detailed information about RAGVenture's Python API.
 
+## Main Script
+
+The main entry point is `rag_startup_ideas.py` in the root directory. It provides a command-line interface for generating startup ideas using RAG technology.
+
+### Command Line Usage
+
+```bash
+python rag_startup_ideas.py --topic "your topic" [options]
+```
+
+#### Required Arguments
+- `--topic`: Topic or domain to generate startup ideas for (e.g., 'healthcare', 'education technology')
+
+#### Optional Arguments
+- `--file`: Path to the JSON file containing startup data (default: yc_startups.json)
+- `--max-lines`: Maximum number of lines to process
+- `--num-ideas`: Number of startup ideas to generate (default: 3)
+
+### Environment Variables
+
+To use LangSmith tracking, set up these environment variables:
+```bash
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_ENDPOINT="https://api.smith.langchain.com"
+LANGCHAIN_API_KEY="your lansmith api key"
+LANGCHAIN_PROJECT="the name of your langsmith project"
+```
+
 ## Core Components
 
 ### StartupLookup
@@ -13,14 +41,27 @@ This document provides detailed information about RAGVenture's Python API.
       show_source: true
       heading_level: 3
 
-### RAG Components
+### RAG Chain
 
-::: rag_startups.rag_startup_ideas
-    handler: python
-    options:
-      show_root_heading: true
-      show_source: true
-      heading_level: 3
+```python
+from rag_startups.core.rag_chain import initialize_rag, format_startup_idea
+```
+
+#### Functions
+
+- `initialize_rag(file_path: str) -> BaseRetriever`
+  - Initializes the RAG system with startup data
+  - Parameters:
+    - `file_path`: Path to JSON file containing startup data
+  - Returns: Configured retriever for similarity search
+
+- `format_startup_idea(description: str, retriever: BaseRetriever, lookup: StartupLookup) -> dict`
+  - Analyzes a startup description and returns formatted results
+  - Parameters:
+    - `description`: Startup idea to analyze
+    - `retriever`: Initialized retriever from `initialize_rag()`
+    - `lookup`: Initialized StartupLookup instance
+  - Returns: Dictionary containing analysis results
 
 ### Data Loading
 
@@ -50,9 +91,7 @@ from rag_startups.data.loader import load_data
 df, json_data = load_data('data/startups.json')
 
 # Initialize lookup
-lookup = StartupLookup()
-for item in json_data:
-    lookup.add_startup(item['description'], item)
+lookup = StartupLookup(json_data)
 
 # Initialize RAG
 retriever = initialize_rag('data/startups.json')
@@ -64,6 +103,16 @@ result = format_startup_idea(
     lookup
 )
 print(result)
+```
+
+### Command Line Example
+
+```bash
+# Generate 5 healthcare startup ideas
+python rag_startup_ideas.py --topic "healthcare" --num-ideas 5
+
+# Use a different dataset with limited entries
+python rag_startup_ideas.py --topic "education" --file "custom_startups.json" --max-lines 1000
 ```
 
 ### Custom Configuration
@@ -106,9 +155,5 @@ except json.JSONDecodeError:
 
 ## Utility Functions
 
-::: rag_startups.utils
-    handler: python
-    options:
-      show_root_heading: true
-      show_source: true
-      heading_level: 3
+```python
+# Removed reference to non-existent file_utils module

@@ -31,5 +31,5 @@ RAG Startups is a Python-based tool that leverages RAG technology to:
 
 - [User Guide](configuration.md): Get started with [configuration](configuration.md) and [examples](examples.md)
 - [API Reference](api.md): Detailed API documentation
-- [Contributing](../CONTRIBUTING.md): Guidelines for contributors
-- [Code of Conduct](../CODE_OF_CONDUCT.md): Our community standards
+- [Contributing](contributing.md): Guidelines for contributors
+- [Code of Conduct](code_of_conduct.md): Our community standards

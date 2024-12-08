@@ -160,4 +160,4 @@ If you need help, you can:
 2. Check existing issues and documentation
 3. Reach out to maintainers
 
-Thank you for contributing to RAGVenture! 🙏
+Thank you for contributing to RAGVenture! 🚀
