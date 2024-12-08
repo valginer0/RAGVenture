@@ -69,6 +69,7 @@ nav:
     - Overview: user-guide/index.md
     - Configuration: configuration.md
     - Examples: examples.md
+    - Market Analysis: market_analysis.md
   - API Reference: api.md
   - Contributing: contributing.md
   - Code of Conduct: code_of_conduct.md
