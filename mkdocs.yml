@@ -44,6 +44,7 @@ plugins:
   - include-markdown:
       preserve_includer_indent: true
       dedent: true
+      comments: true
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -67,5 +68,5 @@ nav:
     - Configuration: configuration.md
     - Examples: examples.md
   - API Reference: api.md
-  - Contributing: ../CONTRIBUTING.md
-  - Code of Conduct: ../CODE_OF_CONDUCT.md
+  - Contributing: contributing.md
+  - Code of Conduct: code_of_conduct.md
