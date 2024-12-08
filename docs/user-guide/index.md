@@ -24,19 +24,41 @@ python -m rag_startups --topic "healthcare technology" --num-ideas 3
 ### 1. Smart Idea Generation
 - Leverages RAG technology to generate contextually relevant startup ideas
 - Uses real-world startup data for grounded suggestions
-- Provides market analysis and competitive insights
+- Provides similarity-based startup comparisons
 
 ### 2. Customization Options
 - Topic-specific idea generation
 - Adjustable number of ideas
-- Configurable similarity thresholds
 - Custom data source integration
+- Configurable local language models
 
-### 3. Analysis Tools
+### 3. Core Capabilities
+- Efficient startup data lookups
+- Similarity-based retrieval
+- Local inference without API dependencies
+- Extensible architecture
+
+## Roadmap
+
+We're actively working on expanding RAGVenture's capabilities. Here are some exciting features planned for future releases:
+
+### Analysis Tools (Coming Soon)
 - Market size estimation
 - Competitor analysis
 - Technology stack suggestions
 - Potential challenges and opportunities
+
+### Enhanced Data Integration (Planned)
+- Real-time startup data updates
+- Multiple data source support
+- Custom data validation
+- Data enrichment pipelines
+
+### Advanced Analytics (Future)
+- Trend analysis
+- Success factor identification
+- Risk assessment
+- Market opportunity scoring
 
 ## Common Use Cases
 
