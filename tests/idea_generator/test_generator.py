@@ -41,9 +41,10 @@ def generator(mock_inference_client):
 
 def test_generate_success(generator, mock_inference_client):
     """Test successful idea generation"""
-    result = generator.generate(num_ideas=1)
-    assert result is not None
-    assert "TestStartup" in result
+    response, insights = generator.generate(num_ideas=1, include_market_analysis=False)
+    assert response is not None
+    assert "TestStartup" in response
+    assert insights is None  # No market analysis requested
     mock_inference_client.text_generation.assert_called_once()
 
 
@@ -51,7 +52,7 @@ def test_generate_rate_limit(generator, mock_inference_client):
     """Test rate limit handling"""
     # Fill up the rate limit
     generator.max_requests_per_hour = 1
-    generator.generate(num_ideas=1)  # First request
+    generator._update_rate_limit()  # Add a request timestamp directly
 
     # Next request should raise RateLimitError
     with pytest.raises(RateLimitError):
@@ -77,8 +78,6 @@ def test_generate_api_error(generator, mock_inference_client):
 
 def test_rate_limit_cleanup(generator):
     """Test that old timestamps are cleaned up"""
-    from datetime import datetime, timedelta
-
     # Add some old timestamps
     old_time = datetime.now() - timedelta(hours=2)
     generator.request_timestamps = [old_time]

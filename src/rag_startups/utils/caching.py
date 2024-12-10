@@ -138,6 +138,35 @@ def cache_result(
     return decorator
 
 
+def ttl_cache(ttl: int = 3600, maxsize: int = 1000):
+    """Simple TTL cache decorator using cachetools.TTLCache.
+
+    Args:
+        ttl: Time to live in seconds (default: 1 hour)
+        maxsize: Maximum size of cache (default: 1000)
+
+    Returns:
+        Decorator function that handles caching
+    """
+    cache = TTLCache(maxsize=maxsize, ttl=ttl)
+    lock = Lock()
+
+    def decorator(func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            key = _get_cache_key(func, args, kwargs)
+            with lock:
+                if key in cache:
+                    return cache[key]
+                result = func(*args, **kwargs)
+                cache[key] = result
+                return result
+
+        return wrapper
+
+    return decorator
+
+
 def clear_cache(prefix: str = None) -> None:
     """Clear all cached values or those matching prefix."""
     try:

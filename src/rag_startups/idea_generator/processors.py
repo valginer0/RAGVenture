@@ -3,7 +3,7 @@ Response processing utilities for startup idea generation.
 """
 
 import re
-from typing import Optional
+from typing import Dict, List, Optional
 
 
 def standardize_field_names(text: str) -> str:
@@ -60,7 +60,7 @@ def clean_response(response: str) -> Optional[str]:
         return None
 
 
-def parse_ideas(cleaned_response: str) -> list[dict]:
+def parse_ideas(cleaned_response: str) -> Optional[List[Dict[str, str]]]:
     """
     Parse cleaned response into structured data.
 
@@ -68,8 +68,53 @@ def parse_ideas(cleaned_response: str) -> list[dict]:
         cleaned_response: Cleaned response text
 
     Returns:
-        List of dictionaries containing structured startup ideas
+        List of dictionaries containing structured startup ideas or None if parsing fails
     """
-    # TODO: Implement parsing logic to convert text into structured data
-    # This will be useful for storing in database or further processing
-    pass
+    if not cleaned_response:
+        return None
+
+    try:
+        # Split into individual ideas
+        ideas_raw = re.split(r"Startup Idea #?\d+:?", cleaned_response)
+        ideas_raw = [idea.strip() for idea in ideas_raw if idea.strip()]
+
+        parsed_ideas = []
+        for idea_text in ideas_raw:
+            idea_dict = {}
+
+            # Extract fields using regex
+            name_match = re.search(r"Name:\s*(.+?)(?:\n|$)", idea_text)
+            problem_match = re.search(
+                r"Problem/Opportunity:\s*(.+?)(?:\n|$)", idea_text
+            )
+            solution_match = re.search(r"Solution:\s*(.+?)(?:\n|$)", idea_text)
+            market_match = re.search(r"Target Market:\s*(.+?)(?:\n|$)", idea_text)
+
+            # Only add idea if we have the minimum required fields
+            if name_match and problem_match and solution_match and market_match:
+                idea_dict["name"] = name_match.group(1).strip()
+                idea_dict["problem"] = problem_match.group(1).strip()
+                idea_dict["solution"] = solution_match.group(1).strip()
+                idea_dict["target_market"] = market_match.group(1).strip()
+
+                # Extract unique value points if present
+                value_match = re.search(
+                    r"Unique Value:(.+?)(?=\n\w+:|$)", idea_text, re.DOTALL
+                )
+                if value_match:
+                    values = value_match.group(1).strip()
+                    # Convert bullet points to list
+                    values = [
+                        v.strip().lstrip("•").strip()
+                        for v in values.split("\n")
+                        if v.strip()
+                    ]
+                    idea_dict["unique_value"] = values
+
+                parsed_ideas.append(idea_dict)
+
+        return parsed_ideas if parsed_ideas else None
+
+    except Exception as e:
+        print(f"Error parsing ideas: {str(e)}")
+        return None

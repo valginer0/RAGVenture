@@ -257,7 +257,16 @@ def test_rag_with_generator():
 
         # Mock the text_generation method
         generator.client.text_generation = MagicMock(
-            return_value="Startup Idea 1: AI-Powered Test Solution\nProblem: Testing is hard\nSolution: AI makes it easy\nTarget Market: Developers"
+            return_value="""
+Startup Idea #1:
+Name: TestStartup
+Problem/Opportunity: Test problem
+Solution: Test solution
+Target Market: Test market
+Unique Value:
+• Test value 1
+• Test value 2
+"""
         )
 
         # Create prompt from template
@@ -284,8 +293,12 @@ def test_rag_with_generator():
         )
 
         # Test generator can use RAG output
-        result = generator.generate(
-            num_ideas=1, example_startups=examples, temperature=0.7
+        response, insights = generator.generate(
+            num_ideas=1,
+            example_startups=examples,
+            temperature=0.7,
+            include_market_analysis=False,  # Disable market analysis for test
         )
-        assert result is not None
-        assert "Startup Idea" in result
+        assert response is not None
+        assert "TestStartup" in response
+        assert insights is None
