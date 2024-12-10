@@ -118,3 +118,25 @@ def parse_ideas(cleaned_response: str) -> Optional[List[Dict[str, str]]]:
     except Exception as e:
         print(f"Error parsing ideas: {str(e)}")
         return None
+
+
+def parse_startup_examples(rag_output: str) -> List[Dict]:
+    """
+    Parse RAG output to create example startups for the generator.
+    Assumes RAG output contains startup descriptions in a structured format.
+    """
+    # TODO: Implement proper parsing based on RAG output format
+    # For now, create a simple example from the RAG output
+    return [
+        {
+            "name": "Example from YC",
+            "problem": rag_output[:200],  # Use first 200 chars as problem description
+            "solution": "Solution derived from YC example",
+            "target_market": "Similar to YC startup",
+            "unique_value": [
+                "Based on successful YC startup",
+                "Market-validated approach",
+                "Proven business model",
+            ],
+        }
+    ]

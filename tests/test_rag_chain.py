@@ -23,7 +23,7 @@ from embed_master import (
 from src.rag_startups.core.startup_metadata import StartupLookup
 from src.rag_startups.embeddings.embedding import create_vectorstore
 from src.rag_startups.idea_generator.generator import StartupIdeaGenerator
-from src.rag_startups.main import parse_startup_examples
+from src.rag_startups.idea_generator.processors import parse_startup_examples
 
 
 def test_create_and_split_document():
