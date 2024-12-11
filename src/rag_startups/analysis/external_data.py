@@ -3,15 +3,18 @@
 import datetime
 import logging
 import os
+from collections import defaultdict
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Union
+from enum import Enum
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import requests
+import spacy
 import wbdata
 from dotenv import load_dotenv
 
-# Load environment variables from both .env and system
-load_dotenv(override=True)  # This will load .env and not override existing env vars
+# Load environment variables from .env file
+load_dotenv(override=True)  # This will load .env and override existing env vars
 
 from ..utils.caching import cache_result
 
@@ -19,15 +22,63 @@ from ..utils.caching import cache_result
 logger = logging.getLogger(__name__)
 
 
+class MarketRelationType(Enum):
+    """Type of relationship between markets."""
+
+    INDEPENDENT = "independent"  # Markets are separate (use sum)
+    OVERLAPPING = "overlapping"  # Markets overlap (use weighted average)
+    SUBSET = "subset"  # One market is subset of another (use larger)
+
+
+@dataclass
+class IndustryMatch:
+    """Matched industry with confidence score."""
+
+    code: str  # Industry code (e.g., NAICS code)
+    score: float  # Raw match score
+    confidence: float  # Normalized confidence (0-1)
+    keywords_matched: List[str]  # Keywords that contributed to the match
+
+    @property
+    def industry_code(self) -> str:
+        """Alias for code to maintain compatibility."""
+        return self.code
+
+
+@dataclass
+class MarketRelationship:
+    """Relationship between two markets."""
+
+    industry1: str
+    industry2: str
+    relationship: MarketRelationType
+    overlap_factor: float  # 0-1, how much markets overlap
+
+
 @dataclass
 class IndustryMetrics:
     """Industry metrics from external sources."""
 
-    gdp_contribution: float  # in USD
+    industry_code: str
+    gdp_contribution: float
     employment: int
-    growth_rate: float  # yearly growth rate
-    market_size: float  # estimated market size in USD
-    confidence_score: float  # 0.0 to 1.0
+    growth_rate: float
+    market_size: float
+    confidence_score: float
+    year: int
+    sources: List[str]
+
+
+@dataclass
+class MultiMarketInsights:
+    """Analysis for multiple related markets."""
+
+    primary_market: IndustryMetrics
+    related_markets: List[IndustryMetrics]
+    relationships: List[MarketRelationship]
+    combined_market_size: float
+    combined_growth_rate: float
+    confidence_score: float
     year: int
     sources: List[str]
 
@@ -93,11 +144,259 @@ class BLSData:
             logger.debug("BLS API key found in environment")
         else:
             logger.warning("BLS API key not found in environment")
+
         self.base_url = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
+
+        # Expanded NAICS to BLS series mapping
         self.series_mapping = {
-            # NAICS 5112 - Software Publishers
-            # CEU5051200001 - Software Publishers, All Employees, Thousands
-            "5112": "CEU5051200001",
+            # Technology and Software
+            "5112": "CEU5051200001",  # Software Publishers
+            "5415": "CEU6054150001",  # Computer Systems Design
+            "5182": "CEU5051820001",  # Data Processing and Hosting
+            "5191": "CEU5051910001",  # Internet Publishing and Broadcasting
+            # Retail and E-commerce
+            "4510": "CEU4245100001",  # Electronic Shopping and Mail-Order Houses
+            "4529": "CEU4245290001",  # Other General Merchandise Stores
+            # Healthcare and Biotech
+            "6211": "CEU6562110001",  # Offices of Physicians
+            "6215": "CEU6562150001",  # Medical and Diagnostic Laboratories
+            "3254": "CEU3232540001",  # Pharmaceutical and Medicine Manufacturing
+            # Financial Services
+            "5221": "CEU5552110001",  # Depository Credit Intermediation
+            "5239": "CEU5552390001",  # Other Financial Investment Activities
+            "5242": "CEU5552420001",  # Insurance Agencies and Brokerages
+            # Manufacturing and Hardware
+            "3341": "CEU3133410001",  # Computer and Peripheral Equipment
+            "3344": "CEU3133440001",  # Semiconductor and Electronic Components
+            "3345": "CEU3133450001",  # Electronic Instruments
+            # Entertainment and Media
+            "5121": "CEU5051210001",  # Motion Picture and Video Industries
+            "5122": "CEU5051220001",  # Sound Recording Industries
+            # Transportation and Logistics
+            "4921": "CEU4349210001",  # Couriers and Express Delivery
+            "4931": "CEU4349310001",  # Warehousing and Storage
+        }
+
+        # Industry keywords for classification
+        self.industry_keywords = {
+            # Technology and Software
+            "5112": {
+                "software",
+                "saas",
+                "application",
+                "platform software",
+                "development",
+                "enterprise software",
+                "developer tools",
+                "platform",
+                "online platform",
+                "digital platform",
+                "marketplace platform",
+            },
+            "5415": {
+                "technology",
+                "consulting",
+                "it",
+                "service",
+                "solution",
+                "system",
+                "integration",
+                "tech",
+            },
+            "5182": {
+                "cloud",
+                "hosting",
+                "datacenter",
+                "data center",
+                "processing",
+                "infrastructure",
+            },
+            # E-commerce and Digital
+            "4510": {
+                "ecommerce",
+                "e-commerce",
+                "marketplace",
+                "online marketplace",
+                "online retail",
+                "online store",
+                "online shopping",
+                "digital retail",
+                "online commerce",
+                "digital marketplace",
+            },
+            "4529": {
+                "retail",
+                "merchandise",
+                "store",
+                "shopping",
+                "retailer",
+                "retail technology",
+                "retail platform",
+                "retail solution",
+            },
+            "5191": {
+                "internet",
+                "digital",
+                "web",
+                "content",
+                "media",
+                "publishing",
+                "portal",
+            },
+            # Healthcare and Life Sciences
+            "6211": {
+                "health",
+                "medical",
+                "healthcare",
+                "clinical",
+                "patient",
+                "doctor",
+                "hospital",
+                "telemedicine",
+                "telehealth",
+            },
+            "6215": {
+                "laboratory",
+                "diagnostic",
+                "testing",
+                "lab",
+                "medical lab",
+                "clinical",
+            },
+            "3254": {"biotech", "pharmaceutical", "therapeutic", "drug", "medicine"},
+            # Financial Services
+            "5221": {
+                "banking",
+                "financial",
+                "payment",
+                "payments",
+                "loan",
+                "lending",
+                "finance",
+                "fintech",
+                "bank",
+                "transaction",
+                "money",
+            },
+            "5242": {
+                "insurance",
+                "insurtech",
+                "risk",
+                "policy",
+                "coverage",
+                "underwriting",
+                "claim",
+                "insurer",
+            },
+            "5239": {"investment", "wealth", "portfolio", "asset", "trading", "invest"},
+            # Hardware and Manufacturing
+            "3341": {
+                "hardware",
+                "device",
+                "electronics",
+                "computer",
+                "smart device",
+                "iot",
+            },
+            "3344": {"semiconductor", "chip", "processor", "circuit"},
+            # Media and Entertainment
+            "5121": {
+                "video",
+                "streaming",
+                "motion picture",
+                "film",
+                "movie",
+                "content",
+                "video platform",
+                "video streaming",
+            },
+            "5122": {
+                "audio",
+                "podcast",
+                "music",
+                "sound",
+                "recording",
+                "radio",
+                "audio platform",
+                "podcast platform",
+                "podcast hosting",
+            },
+            # Logistics
+            "4921": {
+                "delivery",
+                "courier",
+                "shipping",
+                "last mile",
+                "logistics",
+                "delivery platform",
+                "last-mile delivery",
+                "delivery automation",
+            },
+            "4931": {
+                "warehouse",
+                "fulfillment",
+                "storage",
+                "supply chain",
+                "inventory",
+                "warehousing platform",
+                "fulfillment platform",
+            },
+        }
+
+        # Priority weights for industries
+        self.industry_priorities = {
+            # Core tech and digital
+            "5112": 1.2,  # Software is common in modern businesses
+            "5182": 1.2,  # Cloud infrastructure is fundamental
+            # Financial and Healthcare
+            "5221": 1.4,  # Banking/Fintech (highest priority)
+            "5242": 1.4,  # Insurance (highest priority)
+            "6211": 1.3,  # Healthcare
+            # E-commerce and Digital
+            "4510": 1.3,  # E-commerce
+            "4529": 1.2,  # Retail tech
+            "5191": 1.1,  # Digital content
+            # Default priority for others
+            "5415": 1.1,  # IT consulting
+            "6215": 1.0,
+            "3254": 1.0,
+            "5239": 1.0,
+            "3341": 1.0,
+            "3344": 1.0,
+            "5121": 1.0,
+            "5122": 1.0,
+            "4921": 1.0,
+            "4931": 1.0,
+        }
+
+        # Load spaCy model for text analysis
+        try:
+            self.nlp = spacy.load("en_core_web_sm")
+            logger.debug("Loaded spaCy model successfully")
+        except Exception as e:
+            logger.error(f"Failed to load spaCy model: {e}")
+            self.nlp = None
+
+        # Define known market relationships
+        self.market_relationships = {
+            ("5221", "6211"): MarketRelationship(
+                industry1="5221",
+                industry2="6211",
+                relationship=MarketRelationType.INDEPENDENT,
+                overlap_factor=0.2,  # 20% overlap in healthcare fintech
+            ),
+            ("5242", "6211"): MarketRelationship(
+                industry1="5242",
+                industry2="6211",
+                relationship=MarketRelationType.INDEPENDENT,
+                overlap_factor=0.3,  # 30% overlap in insurtech
+            ),
+            ("5112", "5182"): MarketRelationship(
+                industry1="5112",
+                industry2="5182",
+                relationship=MarketRelationType.OVERLAPPING,
+                overlap_factor=0.6,  # 60% overlap in software/cloud
+            ),
         }
 
     def register_api_key(self) -> str:
@@ -109,32 +408,46 @@ class BLSData:
         3. Save the API key in your .env file as BLS_API_KEY=your_key_here
         """
 
-    def get_employment_data(self, series_id: str) -> Dict[str, Union[int, str]]:
-        """Get employment data for a specific series ID."""
+    def get_employment_data(self, series_id: str) -> Dict[str, Any]:
+        """Get employment data for a specific industry series.
+
+        Args:
+            series_id: BLS series ID for the industry
+
+        Returns:
+            Dictionary containing employment data
+        """
+        if not series_id:
+            logger.warning("No series ID provided for employment data")
+            return {}
+
         try:
             response = self._make_request(series_id)
-            if response and response.get("Results", {}).get("series"):
-                series_data = response["Results"]["series"][0]["data"]
-                if series_data:
-                    # Convert thousands to actual number and round to nearest integer
-                    latest_value = float(series_data[0]["value"]) * 1000
-                    return {
-                        "employment": int(round(latest_value)),
-                        "year": int(series_data[0]["year"]),
-                        "period": series_data[0]["period"],
-                    }
+            if not response or "Results" not in response:
+                logger.warning(f"No results found for series {series_id}")
+                return {}
+
+            series_data = response["Results"].get("series", [])
+            if not series_data or not series_data[0].get("data"):
+                logger.warning(f"No data found in series {series_id}")
+                return {}
+
+            # Get the latest data point
+            latest_data = series_data[0]["data"][0]
+
+            # BLS values are in thousands, multiply by 1000
+            employment = float(latest_data["value"]) * 1000
+
             return {
-                "employment": 0,
-                "year": datetime.datetime.now().year,
-                "period": "M01",
+                "employment": employment,
+                "year": int(latest_data["year"]),
+                "period": latest_data["period"],
+                "period_name": latest_data.get("periodName", ""),
             }
+
         except Exception as e:
-            logger.error(f"Error fetching BLS data: {str(e)}")
-            return {
-                "employment": 0,
-                "year": datetime.datetime.now().year,
-                "period": "M01",
-            }
+            logger.error(f"Error getting employment data for series {series_id}: {e}")
+            return {}
 
     def _make_request(self, series_id: str) -> Dict:
         """Make request to BLS API."""
@@ -221,45 +534,487 @@ class BLSData:
                 "period": "M01",
             }
 
+    def get_industry_metrics(
+        self, industry_code: str, year: Optional[int] = None
+    ) -> Optional[IndustryMetrics]:
+        """Get comprehensive metrics for an industry.
+
+        Args:
+            industry_code: Industry code (NAICS)
+            year: Target year for metrics (default: current year)
+
+        Returns:
+            IndustryMetrics object with combined data from BLS and World Bank
+        """
+        if not year:
+            year = (
+                datetime.datetime.now().year - 1
+            )  # Use previous year for complete data
+
+        try:
+            # Get employment data from BLS
+            employment_data = self.get_employment_data(
+                self.series_mapping.get(industry_code, "")
+            )
+            employment = int(
+                employment_data.get("employment", 0)
+            )  # Convert to int for IndustryMetrics
+
+            # Get World Bank data for market size calculation
+            wb = WorldBankData()
+            wb_metrics = wb.get_industry_metrics()
+            if not wb_metrics:
+                logger.warning(
+                    f"No World Bank metrics found for industry {industry_code}"
+                )
+                wb_metrics = {
+                    "gdp": 20000000000000,  # Default $20T
+                    "industry_percentage": 20,  # Default 20%
+                    "growth_rate": 2.5,  # Default 2.5%
+                }
+
+            # Get GDP and industry percentage
+            gdp = wb_metrics.get("gdp", 0)  # GDP in current USD
+            industry_pct = (
+                wb_metrics.get("industry_percentage", 0) / 100
+            )  # Convert percentage to decimal
+            growth_rate = wb_metrics.get("growth_rate", 0)
+
+            # Calculate market size based on GDP contribution
+            total_industry_gdp = (
+                gdp * industry_pct
+            )  # Total GDP contribution from all industries
+
+            # Calculate this industry's share based on employment proportion or default
+            total_industry_employment = (
+                150000000  # Approximate total US industry employment
+            )
+            industry_share = max(
+                0.001, (employment / total_industry_employment)
+            )  # Minimum 0.1% share
+
+            # Adjust share based on industry priority
+            priority_factor = self.industry_priorities.get(industry_code, 1.0)
+            industry_share *= priority_factor
+
+            # Calculate market size (in billions USD) with minimum threshold
+            market_size = max(
+                (total_industry_gdp * industry_share) / 1e9, 0.1
+            )  # Minimum $100M
+
+            # Calculate confidence score based on data quality
+            confidence_score = min(
+                1.0,
+                max(
+                    0.1,
+                    0.4
+                    + (0.3 if employment > 0 else 0)  # Base confidence
+                    + (  # Employment data exists
+                        0.3 if wb_metrics else 0
+                    ),  # World Bank data exists
+                ),
+            )
+
+            return IndustryMetrics(
+                industry_code=industry_code,
+                gdp_contribution=market_size,
+                employment=employment,
+                growth_rate=growth_rate,
+                market_size=market_size,
+                confidence_score=confidence_score,
+                year=year,
+                sources=["World Bank", "BLS"] if wb_metrics else ["BLS"],
+            )
+
+        except Exception as e:
+            logger.error(f"Error getting industry metrics for {industry_code}: {e}")
+            return None
+
+    def _calculate_combined_metrics(
+        self, markets: List[IndustryMetrics], relationships: List[MarketRelationship]
+    ) -> Dict[str, float]:
+        """Calculate combined market size and growth rate.
+
+        Uses market relationships to determine how to combine metrics:
+        - Independent markets: Add sizes (minus overlap)
+        - Overlapping markets: Use weighted average
+        - Subset markets: Use larger market
+        """
+        if not markets:
+            return {"market_size": 0, "growth_rate": 0, "confidence": 0.1}
+
+        # Start with the primary market
+        combined_size = markets[0].market_size
+        total_weight = markets[0].confidence_score
+        weighted_growth = markets[0].growth_rate * markets[0].confidence_score
+
+        # Process each additional market
+        for i, market in enumerate(markets[1:], 1):
+            # Find relationship with previous markets
+            rel = None
+            for r in relationships:
+                if (
+                    r.industry1 == market.industry_code
+                    or r.industry2 == market.industry_code
+                ):
+                    for prev_market in markets[:i]:
+                        if (
+                            r.industry1 == prev_market.industry_code
+                            or r.industry2 == prev_market.industry_code
+                        ):
+                            rel = r
+                            break
+                    if rel:
+                        break
+
+            if not rel:
+                # Default to independent with 10% overlap
+                rel = MarketRelationship(
+                    industry1=markets[0].industry_code,
+                    industry2=market.industry_code,
+                    relationship=MarketRelationType.INDEPENDENT,
+                    overlap_factor=0.1,
+                )
+
+            # Calculate contribution based on relationship type
+            if rel.relationship == MarketRelationType.INDEPENDENT:
+                # Add market size minus overlap
+                overlap = min(combined_size, market.market_size) * rel.overlap_factor
+                combined_size += market.market_size - overlap
+            elif rel.relationship == MarketRelationType.OVERLAPPING:
+                # Use weighted average for overlapping portion
+                overlap = min(combined_size, market.market_size) * rel.overlap_factor
+                non_overlap = market.market_size - overlap
+                combined_size += non_overlap
+            else:  # SUBSET
+                # Take larger market size
+                combined_size = max(combined_size, market.market_size)
+
+            # Update weighted growth rate
+            total_weight += market.confidence_score
+            weighted_growth += market.growth_rate * market.confidence_score
+
+        # Calculate final metrics
+        avg_growth = weighted_growth / total_weight if total_weight > 0 else 0
+        avg_confidence = total_weight / len(markets)
+
+        return {
+            "market_size": max(combined_size, 0.1),  # Minimum $100M
+            "growth_rate": avg_growth,
+            "confidence": avg_confidence,
+        }
+
+    def _detect_industry_codes(
+        self, target_market: str, threshold: float = 0.10
+    ) -> List[IndustryMatch]:
+        """Map target market description to relevant industry codes using NLP.
+
+        Args:
+            target_market: Description of the target market
+            threshold: Minimum confidence threshold for including an industry (default: 0.10)
+
+        Returns:
+            List of industry matches ordered by relevance score
+        """
+        if not self.nlp:
+            logger.error("spaCy model not loaded")
+            return []
+
+        # Preprocess target market description
+        doc = self.nlp(target_market.lower())
+        tokens = [token.text for token in doc]
+
+        matches = []
+        for code, keywords in self.industry_keywords.items():
+            score = 0.0
+            matched_keywords = []
+
+            # Check for exact matches (4.0x weight)
+            exact_matches = keywords.intersection(set(tokens))
+            if exact_matches:
+                score += len(exact_matches) * 4.0
+                matched_keywords.extend(exact_matches)
+
+            # Check for partial matches (1.5x weight)
+            for keyword in keywords:
+                if any(keyword in token for token in tokens):
+                    score += 1.5
+                    matched_keywords.append(keyword)
+
+            # Check for exact phrase matches (6.0x weight)
+            for keyword in keywords:
+                if " " in keyword and keyword in target_market.lower():
+                    score += 6.0
+                    matched_keywords.append(keyword)
+
+            # Apply industry priority weight
+            priority = self.industry_priorities.get(code, 1.0)
+            score *= priority
+
+            # Context bonuses
+            if code in ["5221", "5242"] and any(
+                kw in target_market.lower()
+                for kw in ["health", "medical", "healthcare"]
+            ):
+                score *= 1.5  # 50% bonus for fintech-healthcare combinations
+
+            if code == "4529" and any(
+                kw in target_market.lower() for kw in ["tech", "platform", "digital"]
+            ):
+                score *= 2.0  # 100% bonus for retail-tech combinations
+
+            # Calculate confidence score (normalized)
+            confidence = min(score / 10.0, 1.0)  # Normalize to 0-1 range
+
+            if confidence >= threshold:
+                matches.append(
+                    IndustryMatch(
+                        code=code,
+                        score=score,
+                        confidence=confidence,
+                        keywords_matched=list(set(matched_keywords)),
+                    )
+                )
+
+        # Sort by score descending
+        matches.sort(key=lambda x: x.score, reverse=True)
+        return matches
+
+    def get_industry_analysis(
+        self, target_market: str, country: str = "USA", year: Optional[int] = None
+    ) -> MultiMarketInsights:
+        """Get comprehensive industry analysis for multiple related markets.
+
+        Args:
+            target_market: Description of target market
+            country: Country code (default: USA)
+            year: Target year for metrics
+
+        Returns:
+            MultiMarketInsights object with combined metrics
+        """
+        try:
+            # Detect relevant industry codes
+            matches = self._detect_industry_codes(target_market)
+            if not matches:
+                logger.warning(f"No industry matches found for: {target_market}")
+                return MultiMarketInsights(
+                    primary_market=IndustryMetrics(
+                        industry_code="0000",
+                        gdp_contribution=0,
+                        employment=0,
+                        growth_rate=0,
+                        market_size=0,
+                        confidence_score=0.1,
+                        year=year or datetime.datetime.now().year,
+                        sources=["Default"],
+                    ),
+                    related_markets=[],
+                    relationships=[],
+                    combined_market_size=0,
+                    combined_growth_rate=0,
+                    confidence_score=0.1,
+                    year=year or datetime.datetime.now().year,
+                    sources=["Default"],
+                )
+
+            # Get metrics for each industry
+            markets = []
+            for match in matches:
+                metrics = self.get_industry_metrics(match.code, year)
+                if metrics:
+                    metrics.confidence_score *= (
+                        match.confidence
+                    )  # Adjust confidence based on match quality
+                    markets.append(metrics)
+
+            if not markets:
+                logger.warning("No market metrics found")
+                return MultiMarketInsights(
+                    primary_market=IndustryMetrics(
+                        industry_code=matches[0].code,
+                        gdp_contribution=0,
+                        employment=0,
+                        growth_rate=0,
+                        market_size=0,
+                        confidence_score=0.1,
+                        year=year or datetime.datetime.now().year,
+                        sources=["Default"],
+                    ),
+                    related_markets=[],
+                    relationships=[],
+                    combined_market_size=0,
+                    combined_growth_rate=0,
+                    confidence_score=0.1,
+                    year=year or datetime.datetime.now().year,
+                    sources=["Default"],
+                )
+
+            # Sort markets by confidence score and market size
+            markets.sort(
+                key=lambda x: (x.confidence_score, x.market_size), reverse=True
+            )
+
+            # Get relationships between markets
+            relationships = []
+            for i, m1 in enumerate(markets):
+                for m2 in markets[i + 1 :]:
+                    key = tuple(sorted([m1.industry_code, m2.industry_code]))
+                    if key in self.market_relationships:
+                        relationships.append(self.market_relationships[key])
+
+            # Calculate combined metrics
+            combined_metrics = self._calculate_combined_metrics(markets, relationships)
+
+            return MultiMarketInsights(
+                primary_market=markets[0],
+                related_markets=markets[1:],
+                relationships=relationships,
+                combined_market_size=combined_metrics["market_size"],
+                combined_growth_rate=combined_metrics["growth_rate"],
+                confidence_score=combined_metrics["confidence"],
+                year=year or datetime.datetime.now().year,
+                sources=list(set(sum([m.sources for m in markets], []))),
+            )
+
+        except Exception as e:
+            logger.error(f"Error in market analysis: {e}")
+            return MultiMarketInsights(
+                primary_market=IndustryMetrics(
+                    industry_code="5112",  # Default to software
+                    gdp_contribution=0,
+                    employment=0,
+                    growth_rate=0,
+                    market_size=0,
+                    confidence_score=0.1,
+                    year=year or datetime.datetime.now().year,
+                    sources=["Default"],
+                ),
+                related_markets=[],
+                relationships=[],
+                combined_market_size=0,
+                combined_growth_rate=0,
+                confidence_score=0.1,
+                year=year or datetime.datetime.now().year,
+                sources=["Default"],
+            )
+
 
 def get_industry_analysis(
-    industry_code: str, country: str = "USA", year: Optional[int] = None
-) -> IndustryMetrics:
-    """Get comprehensive industry analysis using multiple data sources.
+    target_market: str, country: str = "USA", year: Optional[int] = None
+) -> MultiMarketInsights:
+    """Get comprehensive industry analysis for multiple related markets.
 
     Args:
-        industry_code: Industry classification code
+        target_market: Description of target market
         country: Country code (default: USA)
-        year: Year for analysis (default: latest available)
+        year: Target year for metrics
 
     Returns:
-        IndustryMetrics object with combined analysis
+        MultiMarketInsights object with combined metrics
     """
-    # Initialize data sources
-    wb = WorldBankData()
-    bls = BLSData()
+    try:
+        bls = BLSData()
 
-    # Get World Bank data
-    wb_data = wb.get_industry_metrics(country, year)
+        # Detect relevant industry codes
+        matches = bls._detect_industry_codes(target_market)
+        if not matches:
+            logger.warning(f"No industry matches found for: {target_market}")
+            return MultiMarketInsights(
+                primary_market=IndustryMetrics(
+                    industry_code="0000",
+                    gdp_contribution=0,
+                    employment=0,
+                    growth_rate=0,
+                    market_size=0,
+                    confidence_score=0.1,
+                    year=year or datetime.datetime.now().year,
+                    sources=["Default"],
+                ),
+                related_markets=[],
+                relationships=[],
+                combined_market_size=0,
+                combined_growth_rate=0,
+                confidence_score=0.1,
+                year=year or datetime.datetime.now().year,
+                sources=["Default"],
+            )
 
-    # Get BLS employment data
-    bls_data = bls.get_industry_employment_data(industry_code)
+        # Get metrics for each industry
+        markets = []
+        for match in matches:
+            metrics = bls.get_industry_metrics(match.code, year)
+            if metrics:
+                metrics.confidence_score *= (
+                    match.confidence
+                )  # Adjust confidence based on match quality
+                markets.append(metrics)
 
-    # Calculate market size
-    gdp = wb_data.get("gdp", 0)
-    industry_pct = wb_data.get("industry_percentage", 0)
-    market_size = (gdp * industry_pct / 100) if gdp and industry_pct else 0
+        if not markets:
+            logger.warning("No market metrics found")
+            return MultiMarketInsights(
+                primary_market=IndustryMetrics(
+                    industry_code=matches[0].code,
+                    gdp_contribution=0,
+                    employment=0,
+                    growth_rate=0,
+                    market_size=0,
+                    confidence_score=0.1,
+                    year=year or datetime.datetime.now().year,
+                    sources=["Default"],
+                ),
+                related_markets=[],
+                relationships=[],
+                combined_market_size=0,
+                combined_growth_rate=0,
+                confidence_score=0.1,
+                year=year or datetime.datetime.now().year,
+                sources=["Default"],
+            )
 
-    # Calculate confidence score based on data availability
-    confidence_factors = [bool(wb_data), bool(bls_data), bool(market_size > 0)]
-    confidence_score = sum(confidence_factors) / len(confidence_factors)
+        # Sort markets by confidence score and market size
+        markets.sort(key=lambda x: (x.confidence_score, x.market_size), reverse=True)
 
-    return IndustryMetrics(
-        gdp_contribution=market_size,
-        employment=bls_data.get("employment", 0),
-        growth_rate=wb_data.get("growth_rate", 0),
-        market_size=market_size,
-        confidence_score=confidence_score,
-        year=year or datetime.datetime.now().year - 1,
-        sources=["World Bank", "BLS"] if bls_data else ["World Bank"],
-    )
+        # Get relationships between markets
+        relationships = []
+        for i, m1 in enumerate(markets):
+            for m2 in markets[i + 1 :]:
+                key = tuple(sorted([m1.industry_code, m2.industry_code]))
+                if key in bls.market_relationships:
+                    relationships.append(bls.market_relationships[key])
+
+        # Calculate combined metrics
+        combined_metrics = bls._calculate_combined_metrics(markets, relationships)
+
+        return MultiMarketInsights(
+            primary_market=markets[0],
+            related_markets=markets[1:],
+            relationships=relationships,
+            combined_market_size=combined_metrics["market_size"],
+            combined_growth_rate=combined_metrics["growth_rate"],
+            confidence_score=combined_metrics["confidence"],
+            year=year or datetime.datetime.now().year,
+            sources=list(set(sum([m.sources for m in markets], []))),
+        )
+
+    except Exception as e:
+        logger.error(f"Error in market analysis: {e}")
+        return MultiMarketInsights(
+            primary_market=IndustryMetrics(
+                industry_code="5112",  # Default to software
+                gdp_contribution=0,
+                employment=0,
+                growth_rate=0,
+                market_size=0,
+                confidence_score=0.1,
+                year=year or datetime.datetime.now().year,
+                sources=["Default"],
+            ),
+            related_markets=[],
+            relationships=[],
+            combined_market_size=0,
+            combined_growth_rate=0,
+            confidence_score=0.1,
+            year=year or datetime.datetime.now().year,
+            sources=["Default"],
+        )

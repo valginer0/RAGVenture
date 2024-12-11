@@ -47,6 +47,9 @@ source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Install spaCy language model for market analysis
+python -m spacy download en_core_web_sm
 ```
 
 2. **Environment Setup**:

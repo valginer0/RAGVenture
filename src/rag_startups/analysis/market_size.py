@@ -2,10 +2,12 @@
 
 import re
 from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
-from .external_data import IndustryMetrics, get_industry_analysis
+from .external_data import BLSData, IndustryMatch, IndustryMetrics
+from .models import MarketRelationship, MarketRelationType, MultiMarketInsights
 
 
 class MarketSegment(Enum):
@@ -135,7 +137,7 @@ class MarketSizeEstimator:
         industry_code = self._get_industry_code(description)
 
         # Get external market data
-        industry_metrics = get_industry_analysis(industry_code)
+        insights = get_industry_analysis(industry_code)
 
         # Base estimate from similar startups
         startup_based_estimate = (
@@ -145,17 +147,12 @@ class MarketSizeEstimator:
         )
 
         # Combine external data with startup-based estimate
-        if industry_metrics.market_size > 0:
-            # Weight external data more heavily if confidence is high
-            weight = industry_metrics.confidence_score
-            combined_estimate = (
-                weight * industry_metrics.market_size
-                + (1 - weight) * startup_based_estimate * 20  # Market multiplier
-            )
-            return combined_estimate / 1e9  # Convert to billions
+        if insights.combined_market_size > 0:
+            # Weight external data more heavily (70%) if available
+            return 0.7 * insights.combined_market_size + 0.3 * startup_based_estimate
         else:
             # Fall back to startup-based estimate if no external data
-            return startup_based_estimate * 20 / 1e9
+            return startup_based_estimate
 
     def _get_industry_code(self, description: str) -> str:
         """Get BLS industry code from description."""
@@ -179,3 +176,167 @@ class MarketSizeEstimator:
         # 3. Market similarity
         base_score = min(len(similar_startups) / 10, 1.0)  # 0.0 to 1.0
         return base_score * 0.8  # Conservative adjustment
+
+
+def calculate_market_relationship(industry1: str, industry2: str) -> MarketRelationship:
+    """Calculate the relationship between two industries."""
+    # For now, use a simple heuristic based on industry codes
+    # In the future, this could use more sophisticated analysis
+
+    # Convert to same length for comparison
+    code1 = industry1[:2]
+    code2 = industry2[:2]
+
+    # Same major industry group - likely substitutes
+    if code1 == code2:
+        return MarketRelationship(
+            industry1=industry1,
+            industry2=industry2,
+            relationship=MarketRelationType.SUBSTITUTE,
+            overlap_factor=0.3,
+        )
+
+    # Known complementary pairs
+    complementary_pairs = {
+        frozenset({"52", "62"}),  # Finance + Healthcare
+        frozenset({"51", "54"}),  # Information + Professional Services
+        frozenset({"45", "49"}),  # Retail + Transportation
+    }
+
+    if frozenset({code1, code2}) in complementary_pairs:
+        return MarketRelationship(
+            industry1=industry1,
+            industry2=industry2,
+            relationship=MarketRelationType.COMPLEMENTARY,
+            overlap_factor=0.2,
+        )
+
+    # Default to independent with small overlap
+    return MarketRelationship(
+        industry1=industry1,
+        industry2=industry2,
+        relationship=MarketRelationType.INDEPENDENT,
+        overlap_factor=0.1,
+    )
+
+
+def calculate_combined_metrics(
+    industries: List[IndustryMetrics], relationships: List[MarketRelationship]
+) -> Tuple[float, float]:
+    """Calculate combined market size and growth rate."""
+    if not industries:
+        return 0.0, 0.0
+
+    # Start with primary market
+    total_size = industries[0].market_size
+    total_growth = industries[0].growth_rate
+
+    # Track processed pairs to avoid double counting
+    processed_pairs = set()
+
+    # Add related markets considering relationships
+    for rel in relationships:
+        # Get corresponding market metrics
+        market1 = next(
+            (m for m in industries if m.industry_code == rel.industry1), None
+        )
+        market2 = next(
+            (m for m in industries if m.industry_code == rel.industry2), None
+        )
+
+        if not market1 or not market2:
+            continue
+
+        # Create unique pair identifier
+        pair = tuple(sorted([rel.industry1, rel.industry2]))
+        if pair in processed_pairs:
+            continue
+
+        if rel.relationship == MarketRelationType.INDEPENDENT:
+            # Add market sizes minus overlap
+            overlap = min(market1.market_size, market2.market_size) * rel.overlap_factor
+            total_size += market2.market_size - overlap
+            total_growth = max(total_growth, market2.growth_rate)
+        elif rel.relationship == MarketRelationType.COMPLEMENTARY:
+            # Add full market sizes
+            total_size += market2.market_size
+            total_growth = max(total_growth, market2.growth_rate)
+        else:  # SUBSTITUTE
+            # Use larger market
+            total_size = max(total_size, market2.market_size)
+            total_growth = max(total_growth, market2.growth_rate)
+
+        processed_pairs.add(pair)
+
+    return total_size, total_growth
+
+
+def get_industry_analysis(target_market: str) -> MultiMarketInsights:
+    """Get comprehensive market analysis for a target market description."""
+    bls = BLSData()
+    matches = bls._detect_industry_codes(target_market)
+
+    if not matches:
+        return MultiMarketInsights(
+            primary_market=None,
+            related_markets=[],
+            relationships=[],
+            combined_market_size=0,
+            combined_growth_rate=0,
+            confidence_score=0,
+            year=datetime.now().year,
+            sources=[],
+        )
+
+    # Get metrics for each industry
+    industries: List[IndustryMetrics] = []
+    for match in matches:
+        metrics = bls.get_industry_metrics(match.code)
+        if metrics:
+            # Use match confidence as metrics confidence
+            metrics.confidence_score = match.confidence
+            industries.append(metrics)
+
+    if not industries:
+        return MultiMarketInsights(
+            primary_market=None,
+            related_markets=[],
+            relationships=[],
+            combined_market_size=0,
+            combined_growth_rate=0,
+            confidence_score=0,
+            year=datetime.now().year,
+            sources=[],
+        )
+
+    # Sort by confidence score
+    industries.sort(key=lambda x: x.confidence_score, reverse=True)
+
+    # Calculate relationships between industries
+    relationships = []
+    for i, industry1 in enumerate(industries):
+        for industry2 in industries[i + 1 :]:
+            rel = calculate_market_relationship(
+                industry1.industry_code, industry2.industry_code
+            )
+            relationships.append(rel)
+
+    # Calculate combined metrics
+    total_size, total_growth = calculate_combined_metrics(industries, relationships)
+
+    # Average confidence across all industries
+    avg_confidence = sum(i.confidence_score for i in industries) / len(industries)
+
+    # Combine sources
+    sources = list(set(sum((i.sources for i in industries), [])))
+
+    return MultiMarketInsights(
+        primary_market=industries[0],
+        related_markets=industries[1:],
+        relationships=relationships,
+        combined_market_size=total_size,
+        combined_growth_rate=total_growth,
+        confidence_score=avg_confidence,
+        year=industries[0].year,
+        sources=sources,
+    )
