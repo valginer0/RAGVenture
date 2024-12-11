@@ -6,8 +6,14 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional, Set, Tuple
 
-from .external_data import BLSData, IndustryMatch, IndustryMetrics
-from .models import MarketRelationship, MarketRelationType, MultiMarketInsights
+from .external_data import (
+    BLSData,
+    IndustryMatch,
+    IndustryMetrics,
+    MarketRelationship,
+    MarketRelationType,
+    MultiMarketInsights,
+)
 
 
 class MarketSegment(Enum):

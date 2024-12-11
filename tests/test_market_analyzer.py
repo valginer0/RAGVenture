@@ -22,6 +22,7 @@ def sample_idea():
 @pytest.fixture
 def sample_metrics():
     return IndustryMetrics(
+        industry_code="541511",  # Custom Computer Programming Services
         gdp_contribution=1_000_000_000,  # $1B
         employment=50000,
         growth_rate=15.0,
