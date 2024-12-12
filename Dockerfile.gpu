@@ -1,4 +1,4 @@
-# Use NVIDIA's CUDA base image
+# Use NVIDIA CUDA base image
 FROM nvidia/cuda:12.1.0-runtime-ubuntu22.04
 
 # Install Python and pip
@@ -12,23 +12,29 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements first to leverage Docker cache
-COPY requirements.txt .
+COPY pyproject.toml .
+COPY setup.py .
 
 # Install Python dependencies with GPU support
 RUN pip3 install --no-cache-dir \
-    torch torchvision torchaudio \
-    --index-url https://download.pytorch.org/whl/cu121 && \
-    pip3 install --no-cache-dir -r requirements.txt
+    torch==2.1.0+cu121 \
+    torchvision==0.16.0+cu121 \
+    -f https://download.pytorch.org/whl/torch_stable.html && \
+    pip3 install --no-cache-dir -e .[test]
+
+# Install and download spaCy model
+RUN pip3 install --no-cache-dir spacy && \
+    python3 -m spacy download en_core_web_sm
 
 # Copy the rest of the application
 COPY . .
 
-# Install the package in development mode
-RUN pip3 install -e .
-
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
+
+# Create directory for logs
+RUN mkdir -p /app/logs && chmod 777 /app/logs
 
 # Default command
 CMD ["python3", "rag_startup_ideas.py"]

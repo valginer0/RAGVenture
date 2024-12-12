@@ -43,6 +43,11 @@ def parse_arguments():
     parser.add_argument(
         "--num-ideas", type=int, default=3, help="Number of startup ideas to generate"
     )
+    parser.add_argument(
+        "--market-analysis",
+        action="store_true",
+        help="Enable market analysis for generated ideas",
+    )
 
     # Future extensibility (commented out for now)
     # parser.add_argument('--chunk-size', type=int, default=1000,
@@ -105,6 +110,7 @@ if __name__ == "__main__":
         prompt_messages=prompt_messages,
         lookup=lookup,
         num_ideas=args.num_ideas,
+        include_market_analysis=args.market_analysis,
     )
 
     # Print the results in a nicely formatted way

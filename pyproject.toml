@@ -16,6 +16,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+dynamic = ["scripts"]
 dependencies = [
     "langchain>=0.1.0",
     "langchain-community>=0.0.1",
