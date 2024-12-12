@@ -122,16 +122,28 @@ class WorldBankData:
                         data[indicator] = result[0]["value"]
                 except Exception as e:
                     logger.warning(f"Failed to fetch indicator {indicator}: {e}")
-                    data[indicator] = 0
+                    # Set default values for each indicator
+                    if indicator == "NY.GDP.MKTP.CD":
+                        data[indicator] = 20000000000000  # $20T default GDP
+                    elif indicator == "NV.IND.TOTL.ZS":
+                        data[indicator] = 20  # 20% default industry percentage
+                    else:
+                        data[indicator] = 2.5  # 2.5% default growth rate
 
+            # Always return a dictionary with all required keys and default values
             return {
-                "gdp": data.get("NY.GDP.MKTP.CD", 0),
-                "industry_percentage": data.get("NV.IND.TOTL.ZS", 0),
-                "growth_rate": data.get("NY.GDP.MKTP.KD.ZG", 0),
+                "gdp": float(data.get("NY.GDP.MKTP.CD", 20000000000000)),  # $20T
+                "industry_percentage": float(data.get("NV.IND.TOTL.ZS", 20)),  # 20%
+                "growth_rate": float(data.get("NY.GDP.MKTP.KD.ZG", 2.5)),  # 2.5%
             }
         except Exception as e:
             logger.error(f"Error fetching World Bank data: {e}")
-            return {}
+            # Return dictionary with default values instead of empty dict
+            return {
+                "gdp": 20000000000000.0,  # $20T
+                "industry_percentage": 20.0,  # 20%
+                "growth_rate": 2.5,  # 2.5%
+            }
 
 
 class BLSData:
@@ -547,67 +559,62 @@ class BLSData:
             IndustryMetrics object with combined data from BLS and World Bank
         """
         if not year:
-            year = (
-                datetime.datetime.now().year - 1
-            )  # Use previous year for complete data
+            year = datetime.datetime.now().year - 1
 
         try:
+            logger.debug(f"Getting metrics for industry {industry_code}, year {year}")
+
             # Get employment data from BLS
-            employment_data = (
-                self.get_employment_data(self.series_mapping.get(industry_code, ""))
-                or {}
-            )  # Default to empty dict if None
-            employment = int(
-                employment_data.get("employment", 100000)
-            )  # Default to 100k if not found
+            series_id = self.series_mapping.get(industry_code, "")
+            logger.debug(f"Using BLS series ID: {series_id}")
 
-            # Get World Bank data for market size calculation
+            employment_data = self.get_employment_data(series_id)
+            logger.debug(f"Employment data: {employment_data}")
+
+            employment_data = employment_data or {}
+            employment = int(employment_data.get("employment", 100000))
+            logger.debug(f"Calculated employment: {employment}")
+
+            # Get World Bank data
             wb = WorldBankData()
-            wb_metrics = (
-                wb.get_industry_metrics() or {}
-            )  # Default to empty dict if None
+            wb_metrics = wb.get_industry_metrics()
+            logger.debug(f"World Bank metrics: {wb_metrics}")
 
-            # Get GDP and industry percentage with defaults
-            gdp = wb_metrics.get("gdp", 20000000000000)  # Default $20T
-            industry_pct = (
-                wb_metrics.get("industry_percentage", 20) / 100
-            )  # Default 20%
-            growth_rate = wb_metrics.get("growth_rate", 2.5)  # Default 2.5%
-
-            # Calculate market size based on GDP contribution
-            total_industry_gdp = (
-                gdp * industry_pct
-            )  # Total GDP contribution from all industries
-
-            # Calculate this industry's share based on employment proportion
-            total_industry_employment = (
-                150000000  # Approximate total US industry employment
+            wb_metrics = wb_metrics or {}
+            gdp = wb_metrics.get("gdp", 20000000000000)
+            industry_pct = wb_metrics.get("industry_percentage", 20) / 100
+            growth_rate = wb_metrics.get("growth_rate", 2.5)
+            logger.debug(
+                f"GDP: {gdp}, Industry %: {industry_pct}, Growth: {growth_rate}"
             )
-            industry_share = max(
-                0.001, (employment / total_industry_employment)
-            )  # Minimum 0.1% share
 
-            # Adjust share based on industry priority
+            # Calculate market size
+            total_industry_gdp = gdp * industry_pct
+            logger.debug(f"Total industry GDP: {total_industry_gdp}")
+
+            total_industry_employment = 150000000
+            industry_share = max(0.001, (employment / total_industry_employment))
+            logger.debug(f"Industry share before priority: {industry_share}")
+
             priority_factor = self.industry_priorities.get(industry_code, 1.0)
             industry_share *= priority_factor
+            logger.debug(
+                f"Industry share after priority ({priority_factor}): {industry_share}"
+            )
 
-            # Calculate market size (in billions USD) with minimum threshold
-            market_size = max(
-                (total_industry_gdp * industry_share) / 1e9, 0.1
-            )  # Minimum $100M
+            market_size = max((total_industry_gdp * industry_share) / 1e9, 0.1)
+            logger.debug(f"Calculated market size: {market_size}")
 
-            # Calculate confidence score based on data quality
             confidence_score = min(
                 1.0,
                 max(
-                    0.1,  # Minimum confidence
-                    0.4  # Base confidence
-                    + (0.3 if employment > 0 else 0)  # Employment data exists
-                    + (0.3 if wb_metrics else 0),  # World Bank data exists
+                    0.1,
+                    0.4 + (0.3 if employment > 0 else 0) + (0.3 if wb_metrics else 0),
                 ),
             )
+            logger.debug(f"Calculated confidence score: {confidence_score}")
 
-            return IndustryMetrics(
+            metrics = IndustryMetrics(
                 industry_code=industry_code,
                 gdp_contribution=market_size,
                 employment=employment,
@@ -617,41 +624,51 @@ class BLSData:
                 year=year,
                 sources=["World Bank", "BLS"] if wb_metrics else ["BLS"],
             )
+            logger.debug(f"Created metrics object: {metrics}")
+            return metrics
 
         except Exception as e:
-            logger.error(f"Error getting industry metrics for {industry_code}: {e}")
-            # Return a default metrics object instead of None
-            return IndustryMetrics(
+            logger.error(
+                f"Error getting industry metrics for {industry_code}: {e}",
+                exc_info=True,
+            )
+            metrics = IndustryMetrics(
                 industry_code=industry_code,
-                gdp_contribution=0.1,  # Minimum $100M
-                employment=100000,  # Default 100k employees
-                growth_rate=2.5,  # Default 2.5% growth
-                market_size=0.1,  # Minimum $100M
-                confidence_score=0.1,  # Low confidence
+                gdp_contribution=0.1,
+                employment=100000,
+                growth_rate=2.5,
+                market_size=0.1,
+                confidence_score=0.1,
                 year=year,
                 sources=["Default"],
             )
+            logger.debug(f"Created default metrics object: {metrics}")
+            return metrics
 
     def _calculate_combined_metrics(
         self, markets: List[IndustryMetrics], relationships: List[MarketRelationship]
     ) -> Dict[str, float]:
-        """Calculate combined market size and growth rate.
-
-        Uses market relationships to determine how to combine metrics:
-        - Independent markets: Add sizes (minus overlap)
-        - Overlapping markets: Use weighted average
-        - Subset markets: Use larger market
-        """
+        """Calculate combined market size and growth rate."""
         if not markets:
+            logger.debug("No markets provided, returning defaults")
             return {"market_size": 0, "growth_rate": 0, "confidence": 0.1}
 
+        logger.debug(f"Calculating combined metrics for {len(markets)} markets")
+        logger.debug(f"First market: {markets[0]}")
+
         # Start with the primary market
-        combined_size = markets[0].market_size
-        total_weight = markets[0].confidence_score
-        weighted_growth = markets[0].growth_rate * markets[0].confidence_score
+        combined_size = markets[0].market_size or 0.1
+        total_weight = markets[0].confidence_score or 0.1
+        weighted_growth = (markets[0].growth_rate or 0) * (
+            markets[0].confidence_score or 0.1
+        )
+        logger.debug(
+            f"Initial values - Size: {combined_size}, Weight: {total_weight}, Growth: {weighted_growth}"
+        )
 
         # Process each additional market
         for i, market in enumerate(markets[1:], 1):
+            logger.debug(f"Processing market {i}: {market}")
             # Find relationship with previous markets
             rel = None
             for r in relationships:
@@ -679,26 +696,34 @@ class BLSData:
                 )
 
             # Calculate contribution based on relationship type
+            market_size = market.market_size or 0.1
             if rel.relationship == MarketRelationType.INDEPENDENT:
                 # Add market size minus overlap
-                overlap = min(combined_size, market.market_size) * rel.overlap_factor
-                combined_size += market.market_size - overlap
+                overlap = min(combined_size, market_size) * rel.overlap_factor
+                combined_size += market_size - overlap
             elif rel.relationship == MarketRelationType.OVERLAPPING:
                 # Use weighted average for overlapping portion
-                overlap = min(combined_size, market.market_size) * rel.overlap_factor
-                non_overlap = market.market_size - overlap
+                overlap = min(combined_size, market_size) * rel.overlap_factor
+                non_overlap = market_size - overlap
                 combined_size += non_overlap
             else:  # SUBSET
                 # Take larger market size
-                combined_size = max(combined_size, market.market_size)
+                combined_size = max(combined_size, market_size)
 
             # Update weighted growth rate
-            total_weight += market.confidence_score
-            weighted_growth += market.growth_rate * market.confidence_score
+            market_confidence = market.confidence_score or 0.1
+            total_weight += market_confidence
+            weighted_growth += (market.growth_rate or 0) * market_confidence
+            logger.debug(
+                f"Updated values - Size: {combined_size}, Weight: {total_weight}, Growth: {weighted_growth}"
+            )
 
         # Calculate final metrics
         avg_growth = weighted_growth / total_weight if total_weight > 0 else 0
         avg_confidence = total_weight / len(markets)
+        logger.debug(
+            f"Final values - Growth: {avg_growth}, Confidence: {avg_confidence}"
+        )
 
         return {
             "market_size": max(combined_size, 0.1),  # Minimum $100M
@@ -823,12 +848,29 @@ class BLSData:
             # Get metrics for each industry
             markets = []
             for match in matches:
-                metrics = self.get_industry_metrics(match.code, year)
-                if metrics:
-                    metrics.confidence_score *= (
-                        match.confidence
-                    )  # Adjust confidence based on match quality
-                    markets.append(metrics)
+                try:
+                    metrics = self.get_industry_metrics(match.code, year)
+                    if metrics:  # Only add valid metrics
+                        metrics.confidence_score *= (
+                            match.confidence
+                        )  # Adjust confidence based on match quality
+                        markets.append(metrics)
+                except Exception as e:
+                    logger.error(f"Error getting metrics for {match.code}: {e}")
+                    # Create default metrics for this industry
+                    markets.append(
+                        IndustryMetrics(
+                            industry_code=match.code,
+                            gdp_contribution=0.1,  # Minimum $100M
+                            employment=100000,  # Default 100k employees
+                            growth_rate=2.5,  # Default 2.5% growth
+                            market_size=0.1,  # Minimum $100M
+                            confidence_score=0.1
+                            * match.confidence,  # Low confidence adjusted by match quality
+                            year=year or datetime.datetime.now().year,
+                            sources=["Default"],
+                        )
+                    )
 
             if not markets:
                 logger.warning("No market metrics found")
@@ -945,12 +987,29 @@ def get_industry_analysis(
         # Get metrics for each industry
         markets = []
         for match in matches:
-            metrics = bls.get_industry_metrics(match.code, year)
-            if metrics:
-                metrics.confidence_score *= (
-                    match.confidence
-                )  # Adjust confidence based on match quality
-                markets.append(metrics)
+            try:
+                metrics = bls.get_industry_metrics(match.code, year)
+                if metrics:  # Only add valid metrics
+                    metrics.confidence_score *= (
+                        match.confidence
+                    )  # Adjust confidence based on match quality
+                    markets.append(metrics)
+            except Exception as e:
+                logger.error(f"Error getting metrics for {match.code}: {e}")
+                # Create default metrics for this industry
+                markets.append(
+                    IndustryMetrics(
+                        industry_code=match.code,
+                        gdp_contribution=0.1,  # Minimum $100M
+                        employment=100000,  # Default 100k employees
+                        growth_rate=2.5,  # Default 2.5% growth
+                        market_size=0.1,  # Minimum $100M
+                        confidence_score=0.1
+                        * match.confidence,  # Low confidence adjusted by match quality
+                        year=year or datetime.datetime.now().year,
+                        sources=["Default"],
+                    )
+                )
 
         if not markets:
             logger.warning("No market metrics found")
