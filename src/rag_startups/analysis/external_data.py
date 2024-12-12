@@ -119,26 +119,44 @@ class WorldBankData:
                     result = wbdata.get_data(indicator, country=country, date=str(year))
                     if result and len(result) > 0:
                         # Get the most recent value
-                        data[indicator] = result[0]["value"]
+                        value = result[0].get("value")
+                        # Convert value to float if it exists
+                        if value is not None:
+                            try:
+                                data[indicator] = float(value)
+                            except (ValueError, TypeError):
+                                logger.warning(
+                                    f"Could not convert value {value} to float for indicator {indicator}"
+                                )
+                                data[indicator] = None
+                        else:
+                            data[indicator] = None
                 except Exception as e:
                     logger.warning(f"Failed to fetch indicator {indicator}: {e}")
-                    # Set default values for each indicator
-                    if indicator == "NY.GDP.MKTP.CD":
-                        data[indicator] = 20000000000000  # $20T default GDP
-                    elif indicator == "NV.IND.TOTL.ZS":
-                        data[indicator] = 20  # 20% default industry percentage
-                    else:
-                        data[indicator] = 2.5  # 2.5% default growth rate
+                    data[indicator] = None
 
-            # Always return a dictionary with all required keys and default values
+            # Use default values if data is missing or None
+            gdp = data.get("NY.GDP.MKTP.CD")
+            if gdp is None or gdp <= 0:
+                gdp = 20000000000000.0  # $20T default GDP
+
+            industry_pct = data.get("NV.IND.TOTL.ZS")
+            if industry_pct is None or industry_pct <= 0:
+                industry_pct = 20.0  # 20% default
+
+            growth_rate = data.get("NY.GDP.MKTP.KD.ZG")
+            if growth_rate is None:
+                growth_rate = 2.5  # 2.5% default
+
+            # Always return a dictionary with all required keys and valid values
             return {
-                "gdp": float(data.get("NY.GDP.MKTP.CD", 20000000000000)),  # $20T
-                "industry_percentage": float(data.get("NV.IND.TOTL.ZS", 20)),  # 20%
-                "growth_rate": float(data.get("NY.GDP.MKTP.KD.ZG", 2.5)),  # 2.5%
+                "gdp": gdp,
+                "industry_percentage": industry_pct,
+                "growth_rate": growth_rate,
             }
         except Exception as e:
-            logger.error(f"Error fetching World Bank data: {e}")
-            # Return dictionary with default values instead of empty dict
+            logger.error(f"Error fetching World Bank data: {e}", exc_info=True)
+            # Return dictionary with default values
             return {
                 "gdp": 20000000000000.0,  # $20T
                 "industry_percentage": 20.0,  # 20%
