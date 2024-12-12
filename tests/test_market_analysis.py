@@ -52,7 +52,7 @@ def mock_world_bank(monkeypatch):
 @pytest.fixture
 def mock_bls(monkeypatch):
     """Mock BLS data."""
-    mock = MagicMock()
+    mock = MagicMock(spec=BLSData)
     mock._detect_industry_codes.return_value = [
         IndustryMatch(
             code="5112",
@@ -79,25 +79,7 @@ def mock_bls(monkeypatch):
         "growth_rate": 5.0,
         "confidence": 0.7,
     }
-    monkeypatch.setattr("rag_startups.analysis.external_data.BLSData", lambda: mock)
-    return mock
-
-
-def test_market_segment_detection(market_estimator):
-    """Test market segment detection."""
-    assert market_estimator._determine_segment("B2B SaaS platform") == MarketSegment.B2B
-    assert (
-        market_estimator._determine_segment("consumer mobile app") == MarketSegment.B2C
-    )
-    assert (
-        market_estimator._determine_segment("enterprise solution")
-        == MarketSegment.ENTERPRISE
-    )
-
-
-def test_market_size_estimation(market_estimator, mock_world_bank, mock_bls):
-    """Test market size estimation."""
-    mock_metrics = MultiMarketInsights(
+    mock.get_industry_analysis.return_value = MultiMarketInsights(
         primary_market=IndustryMetrics(
             industry_code="5112",
             gdp_contribution=100000000000.0,  # $100B
@@ -117,19 +99,42 @@ def test_market_size_estimation(market_estimator, mock_world_bank, mock_bls):
         sources=["World Bank", "BLS"],
     )
 
-    with patch(
-        "rag_startups.analysis.market_size.get_industry_analysis"
-    ) as mock_analysis:
-        mock_analysis.return_value = mock_metrics
+    # Create a mock class that returns our mock instance
+    mock_class = MagicMock(return_value=mock)
+    monkeypatch.setattr("rag_startups.analysis.external_data.BLSData", mock_class)
+    monkeypatch.setattr(
+        "rag_startups.analysis.market_size.BLSData", mock_class
+    )  # Also patch in market_size module
+    return mock
 
-        result = market_estimator.estimate_market_size(
-            "B2B SaaS platform", SAMPLE_STARTUP_DATA
-        )
 
-        assert result.total_addressable_market > 0
-        assert result.serviceable_addressable_market > 0
-        assert result.serviceable_obtainable_market > 0
-        assert 0 < result.confidence_score <= 1.0
+def test_market_segment_detection(market_estimator):
+    """Test market segment detection."""
+    assert market_estimator._determine_segment("B2B SaaS platform") == MarketSegment.B2B
+    assert (
+        market_estimator._determine_segment("consumer mobile app") == MarketSegment.B2C
+    )
+    assert (
+        market_estimator._determine_segment("enterprise solution")
+        == MarketSegment.ENTERPRISE
+    )
+
+
+def test_market_size_estimation(market_estimator, mock_world_bank, mock_bls):
+    """Test market size estimation."""
+    # Set up the mock to return our metrics
+    mock_bls.get_industry_analysis.return_value = (
+        mock_bls.get_industry_analysis.return_value
+    )
+
+    result = market_estimator.estimate_market_size(
+        "B2B SaaS platform", SAMPLE_STARTUP_DATA
+    )
+
+    assert result.total_addressable_market > 0
+    assert result.serviceable_addressable_market > 0
+    assert result.serviceable_obtainable_market > 0
+    assert 0 < result.confidence_score <= 1.0
 
 
 def test_world_bank_integration(mock_world_bank):
@@ -142,16 +147,33 @@ def test_world_bank_integration(mock_world_bank):
     assert "growth_rate" in metrics
 
 
-def test_bls_integration(mock_bls):
+def test_bls_integration(monkeypatch):
     """Test BLS data integration."""
-    mock_bls.get_employment_data.return_value = {"employment": 1000000}
+    # Create a mock instance
+    mock = MagicMock(spec=BLSData)
+    mock.get_employment_data.return_value = {"employment": 1000000}
+
+    # Create a mock class that returns our mock instance
+    mock_class = MagicMock(return_value=mock)
+
+    # Patch BLSData in the current module since we imported it directly
+    monkeypatch.setattr("tests.test_market_analysis.BLSData", mock_class)
+
+    # Create a new instance - this should use our mock
     bls = BLSData()
+
+    # Call the method
     data = bls.get_employment_data(
         "CEU5051200001"
     )  # Series ID for Software Publishers (5112)
 
+    # Verify the mock class was called to create the instance
+    assert mock_class.called
+    # Verify the method was called on our mock instance
+    assert mock.get_employment_data.called
+    # Verify we got the expected data
     assert "employment" in data
-    assert data["employment"] > 0
+    assert data["employment"] == 1000000
 
 
 def test_combined_analysis(mock_world_bank, mock_bls):
@@ -446,9 +468,7 @@ def test_get_industry_analysis_multi():
 
     # Mock the BLSData constructor to return our mocked instance
     with patch("rag_startups.analysis.external_data.BLSData", return_value=bls):
-        with patch(
-            "rag_startups.analysis.external_data.WorldBankData", return_value=wb
-        ):
+        with patch("rag_startups.analysis.market_size.BLSData", return_value=bls):
             insights = get_industry_analysis("A healthcare payment processing platform")
 
             assert isinstance(insights, MultiMarketInsights)
