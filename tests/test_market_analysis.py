@@ -97,28 +97,30 @@ def test_market_segment_detection(market_estimator):
 
 def test_market_size_estimation(market_estimator, mock_world_bank, mock_bls):
     """Test market size estimation."""
-    with patch(
-        "rag_startups.analysis.market_size.get_industry_analysis"
-    ) as mock_analysis:
-        mock_analysis.return_value = MultiMarketInsights(
-            primary_market=IndustryMetrics(
-                industry_code="5112",
-                gdp_contribution=100.0,
-                employment=1000000,
-                growth_rate=2.5,
-                market_size=100.0,
-                confidence_score=0.7,
-                year=2024,
-                sources=["World Bank", "BLS"],
-            ),
-            related_markets=[],
-            relationships=[],
-            combined_market_size=100.0,
-            combined_growth_rate=2.5,
+    mock_metrics = MultiMarketInsights(
+        primary_market=IndustryMetrics(
+            industry_code="5112",
+            gdp_contribution=100000000000.0,  # $100B
+            employment=1000000,
+            growth_rate=2.5,
+            market_size=100000000000.0,  # $100B
             confidence_score=0.7,
             year=2024,
             sources=["World Bank", "BLS"],
-        )
+        ),
+        related_markets=[],
+        relationships=[],
+        combined_market_size=100000000000.0,  # $100B
+        combined_growth_rate=2.5,
+        confidence_score=0.7,
+        year=2024,
+        sources=["World Bank", "BLS"],
+    )
+
+    with patch(
+        "rag_startups.analysis.market_size.get_industry_analysis"
+    ) as mock_analysis:
+        mock_analysis.return_value = mock_metrics
 
         result = market_estimator.estimate_market_size(
             "B2B SaaS platform", SAMPLE_STARTUP_DATA
@@ -142,6 +144,7 @@ def test_world_bank_integration(mock_world_bank):
 
 def test_bls_integration(mock_bls):
     """Test BLS data integration."""
+    mock_bls.get_employment_data.return_value = {"employment": 1000000}
     bls = BLSData()
     data = bls.get_employment_data(
         "CEU5051200001"
