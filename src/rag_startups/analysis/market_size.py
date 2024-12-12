@@ -139,25 +139,18 @@ class MarketSizeEstimator:
         self, description: str, similar_startups: List[Dict]
     ) -> float:
         """Estimate total addressable market size in billions USD."""
-        # Get industry code based on description
-        industry_code = self._get_industry_code(description)
-
-        # Get external market data
-        insights = get_industry_analysis(industry_code)
-
-        # Base estimate from similar startups
-        startup_based_estimate = (
-            sum(s.get("valuation", 0) for s in similar_startups) / len(similar_startups)
-            if similar_startups
-            else 0
-        )
-
-        # Combine external data with startup-based estimate
-        if insights.combined_market_size > 0:
-            # Weight external data more heavily (70%) if available
-            return 0.7 * insights.combined_market_size + 0.3 * startup_based_estimate
+        bls = BLSData()
+        market_insights = bls.get_industry_analysis(description)
+        if market_insights:
+            return market_insights.combined_market_size
         else:
-            # Fall back to startup-based estimate if no external data
+            # Base estimate from similar startups
+            startup_based_estimate = (
+                sum(s.get("valuation", 0) for s in similar_startups)
+                / len(similar_startups)
+                if similar_startups
+                else 0
+            )
             return startup_based_estimate
 
     def _get_industry_code(self, description: str) -> str:

@@ -50,39 +50,36 @@ class MarketAnalyzer:
             year: Year for market data (default: latest available)
 
         Returns:
-            MarketInsights object with analysis results
+            MarketInsights object containing analysis results
         """
         try:
-            # Get basic industry metrics
-            industry_code = self._detect_industry_code(idea["target_market"])
-            metrics = get_industry_analysis(industry_code, country, year)
+            # Get market data
+            target_market = idea.get("target_market", "")
+            if not target_market:
+                logger.warning("No target market specified in idea")
+                return None
 
-            # Analyze competition and trends
-            competition_level = self._assess_competition(idea, metrics)
-            barriers = self._identify_barriers(idea, metrics)
-            trends = self._analyze_trends(idea, metrics)
-            risks = self._assess_risks(idea, metrics)
+            market_data = self.bls.get_industry_analysis(target_market, country, year)
+            if not market_data:
+                logger.warning(f"No market data found for {target_market}")
+                return None
 
-            # Calculate opportunity score
-            opportunity_score = self._calculate_opportunity_score(
-                metrics, competition_level, barriers, trends, risks
-            )
-
+            # Convert MultiMarketInsights to MarketInsights
             return MarketInsights(
-                market_size=metrics.market_size,
-                growth_rate=metrics.growth_rate,
-                competition_level=competition_level,
-                barriers_to_entry=barriers,
-                key_trends=trends,
-                risk_factors=risks,
-                opportunity_score=opportunity_score,
-                confidence_score=metrics.confidence_score,
-                year=metrics.year,
-                sources=metrics.sources,
+                market_size=market_data.combined_market_size,
+                growth_rate=market_data.combined_growth_rate,
+                competition_level=self._assess_competition(market_data),
+                barriers_to_entry=self._identify_barriers(market_data),
+                key_trends=self._identify_trends(market_data),
+                risk_factors=self._identify_risks(market_data),
+                opportunity_score=self._calculate_opportunity_score(market_data),
+                confidence_score=market_data.confidence_score,
+                year=market_data.year,
+                sources=market_data.sources,
             )
 
         except Exception as e:
-            logger.error(f"Failed to analyze idea {idea.get('name', 'Unknown')}: {e}")
+            logger.error(f"Failed to analyze idea {idea.get('name', '')}: {str(e)}")
             raise
 
     def _detect_industry_code(self, target_market: str) -> str:
@@ -91,72 +88,57 @@ class MarketAnalyzer:
         # For now, return a default code
         return "5112"  # Software Publishers
 
-    def _assess_competition(self, idea: Dict, metrics: IndustryMetrics) -> str:
+    def _assess_competition(self, market_data) -> str:
         """Assess competition level based on market data."""
-        # TODO: Implement proper competition assessment
-        if metrics.market_size > 1_000_000_000:  # $1B
+        if market_data.combined_market_size > 100:  # Large market
             return "High"
-        elif metrics.market_size > 100_000_000:  # $100M
+        elif market_data.combined_market_size > 50:  # Medium market
             return "Medium"
-        return "Low"
-
-    def _identify_barriers(self, idea: Dict, metrics: IndustryMetrics) -> List[str]:
-        """Identify barriers to entry."""
-        # TODO: Implement proper barriers analysis
-        barriers = []
-        if metrics.market_size > 1_000_000_000:
-            barriers.append("High initial capital requirements")
-        if "AI" in idea.get("solution", ""):
-            barriers.append("Technical expertise required")
-        return barriers or ["No significant barriers identified"]
-
-    def _analyze_trends(self, idea: Dict, metrics: IndustryMetrics) -> List[str]:
-        """Analyze market trends."""
-        # TODO: Implement proper trends analysis
-        trends = []
-        if metrics.growth_rate > 10:
-            trends.append("Rapid market growth")
-        elif metrics.growth_rate > 5:
-            trends.append("Steady market growth")
         else:
-            trends.append("Mature market")
+            return "Low"
+
+    def _identify_barriers(self, market_data) -> List[str]:
+        """Identify barriers to entry."""
+        barriers = []
+        if market_data.combined_market_size > 100:
+            barriers.append("High capital requirements")
+        if len(market_data.related_markets) > 2:
+            barriers.append("Complex market relationships")
+        if market_data.confidence_score < 0.5:
+            barriers.append("Market uncertainty")
+        return barriers
+
+    def _identify_trends(self, market_data) -> List[str]:
+        """Identify key market trends."""
+        trends = []
+        if market_data.combined_growth_rate > 10:
+            trends.append("High growth market")
+        if market_data.combined_growth_rate < 0:
+            trends.append("Market contraction")
+        if len(market_data.related_markets) > 2:
+            trends.append("Market consolidation")
         return trends
 
-    def _assess_risks(self, idea: Dict, metrics: IndustryMetrics) -> List[str]:
-        """Assess potential risks."""
-        # TODO: Implement proper risk assessment
+    def _identify_risks(self, market_data) -> List[str]:
+        """Identify risk factors."""
         risks = []
-        if metrics.growth_rate < 0:
+        if market_data.combined_growth_rate < 0:
             risks.append("Declining market")
-        if metrics.market_size < 10_000_000:  # $10M
-            risks.append("Small market size")
-        return risks or ["No significant risks identified"]
+        if market_data.confidence_score < 0.5:
+            risks.append("Limited market data")
+        if len(market_data.related_markets) > 3:
+            risks.append("Complex competitive landscape")
+        return risks
 
-    def _calculate_opportunity_score(
-        self,
-        metrics: IndustryMetrics,
-        competition: str,
-        barriers: List[str],
-        trends: List[str],
-        risks: List[str],
-    ) -> float:
-        """Calculate overall opportunity score (0-1)."""
-        # TODO: Implement proper scoring
-        score = 0.5  # Base score
+    def _calculate_opportunity_score(self, market_data) -> float:
+        """Calculate opportunity score (0-1)."""
+        # Base score from market size and growth
+        base_score = min(market_data.combined_market_size / 200, 0.5) + min(
+            max(market_data.combined_growth_rate / 20, 0), 0.5
+        )
 
-        # Adjust for market size and growth
-        if metrics.market_size > 1_000_000_000:
-            score += 0.1
-        if metrics.growth_rate > 10:
-            score += 0.1
+        # Adjust for confidence
+        base_score *= market_data.confidence_score
 
-        # Adjust for competition
-        if competition == "Low":
-            score += 0.1
-        elif competition == "High":
-            score -= 0.1
-
-        # Adjust for risks
-        score -= len(risks) * 0.05
-
-        return max(0.0, min(1.0, score))  # Ensure score is between 0 and 1
+        # Ensure score is between 0 and 1
+        return max(min(base_score, 1.0), 0.0)
