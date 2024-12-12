@@ -180,6 +180,16 @@ def test_error_handling():
     assert result.confidence_score < 0.5  # Low confidence due to missing data
 
 
+try:
+    import spacy
+
+    spacy.load("en_core_web_sm")
+    SPACY_AVAILABLE = True
+except Exception:
+    SPACY_AVAILABLE = False
+
+
+@pytest.mark.skipif(not SPACY_AVAILABLE, reason="spaCy model not available")
 def test_industry_code_detection():
     """Test the industry code detection functionality."""
     bls = BLSData()
@@ -233,6 +243,7 @@ def test_industry_code_detection():
         )
 
 
+@pytest.mark.skipif(not SPACY_AVAILABLE, reason="spaCy model not available")
 def test_industry_code_detection_multi():
     bls = BLSData()
 
@@ -276,6 +287,43 @@ def test_industry_code_detection_multi():
                 f"Low confidence for {code} in: {description}\n"
                 f"Expected >= {min_confidence}, got {detected_codes[code]}"
             )
+
+
+@pytest.mark.skipif(not SPACY_AVAILABLE, reason="spaCy model not available")
+def test_multi_industry_detection():
+    bls = BLSData()
+
+    # Test healthcare fintech
+    matches = bls._detect_industry_codes(
+        "Healthcare payment platform for hospitals and insurance companies"
+    )
+    codes = [m.code for m in matches]
+    assert "6211" in codes  # Healthcare
+    assert "5221" in codes  # Banking/Fintech
+    assert "5242" in codes  # Insurance
+
+    # Test e-commerce platform
+    matches = bls._detect_industry_codes(
+        "Online marketplace platform for retail merchants"
+    )
+    codes = [m.code for m in matches]
+    assert "4510" in codes  # E-commerce
+    assert "5112" in codes  # Software
+
+    # Test pure fintech
+    matches = bls._detect_industry_codes(
+        "Digital banking and payment processing platform"
+    )
+    codes = [m.code for m in matches]
+    assert "5221" in codes  # Banking/Fintech
+    assert matches[0].code == "5221"  # Should be primary match
+
+    # Test insurtech
+    matches = bls._detect_industry_codes("AI-powered insurance underwriting platform")
+    codes = [m.code for m in matches]
+    assert "5242" in codes  # Insurance
+    assert matches[0].code == "5242"  # Should be primary match
+    assert matches[0].code == "5242"  # Should be primary match
 
 
 def test_market_relationship_calculation():
@@ -404,39 +452,3 @@ def test_get_industry_analysis_multi():
             first_relationship = insights.relationships[0]
             assert isinstance(first_relationship, MarketRelationship)
             assert first_relationship.overlap_factor == 0.2
-
-
-def test_multi_industry_detection():
-    bls = BLSData()
-
-    # Test healthcare fintech
-    matches = bls._detect_industry_codes(
-        "Healthcare payment platform for hospitals and insurance companies"
-    )
-    codes = [m.code for m in matches]
-    assert "6211" in codes  # Healthcare
-    assert "5221" in codes  # Banking/Fintech
-    assert "5242" in codes  # Insurance
-
-    # Test e-commerce platform
-    matches = bls._detect_industry_codes(
-        "Online marketplace platform for retail merchants"
-    )
-    codes = [m.code for m in matches]
-    assert "4510" in codes  # E-commerce
-    assert "5112" in codes  # Software
-
-    # Test pure fintech
-    matches = bls._detect_industry_codes(
-        "Digital banking and payment processing platform"
-    )
-    codes = [m.code for m in matches]
-    assert "5221" in codes  # Banking/Fintech
-    assert matches[0].code == "5221"  # Should be primary match
-
-    # Test insurtech
-    matches = bls._detect_industry_codes("AI-powered insurance underwriting platform")
-    codes = [m.code for m in matches]
-    assert "5242" in codes  # Insurance
-    assert matches[0].code == "5242"  # Should be primary match
-    assert matches[0].code == "5242"  # Should be primary match
