@@ -69,6 +69,13 @@ def display_idea(idea_text: str, market_insights: Optional[dict] = None):
 
 @app.command()
 def generate(
+    topic: str = typer.Argument(..., help="Topic or domain for the startup idea"),
+    startup_file: str = typer.Option(
+        "yc_startups.json",
+        "--file",
+        "-f",
+        help="Path to startup data file (must be provided by user)",
+    ),
     num_ideas: int = typer.Option(
         1, "--num", "-n", help="Number of startup ideas to generate (1-5)"
     ),
@@ -88,12 +95,21 @@ def generate(
         console.print("[red]Error:[/red] num_ideas must be between 1 and 5")
         raise typer.Exit(1)
 
+    # Validate startup data file exists
+    if not os.path.exists(startup_file):
+        console.print(
+            f"[red]Error:[/red] Startup data file '{startup_file}' not found.\n"
+            "Please provide a valid startup data file using --file option."
+        )
+        raise typer.Exit(1)
+
     # Validate token
     token = validate_token()
 
     with console.status("[bold green]Generating startup ideas..."):
-        generator = StartupIdeaGenerator(token=token)
+        generator = StartupIdeaGenerator(token=token, startup_file=startup_file)
         response, insights = generator.generate(
+            topic=topic,
             num_ideas=num_ideas,
             temperature=temperature,
             include_market_analysis=market_analysis,
@@ -151,6 +167,5 @@ def clear():
         raise typer.Exit(1)
 
 
-def main():
-    """Entry point for the CLI."""
+if __name__ == "__main__":
     app()
