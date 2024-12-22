@@ -172,3 +172,6 @@ class StartupIdeaGenerator:
         TODO: Implement async version when needed
         """
         raise NotImplementedError("Async generation not yet implemented")
+
+
+# Test comment to verify edit capability

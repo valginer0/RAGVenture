@@ -14,8 +14,8 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first to leverage Docker cache
-COPY requirements.txt .
+# Copy the entire project
+COPY . .
 
 # Install Python dependencies - force CPU versions
 RUN pip install --no-cache-dir \
@@ -24,15 +24,16 @@ RUN pip install --no-cache-dir \
     -f https://download.pytorch.org/whl/torch_stable.html && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application
-COPY . .
-
-# Install the package in development mode
-RUN pip install -e .
+# Install and download spaCy model
+RUN pip install --no-cache-dir spacy && \
+    python -m spacy download en_core_web_sm
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 
-# Default command
-CMD ["python", "rag_startup_ideas.py"]
+# Create directory for logs
+RUN mkdir -p /app/logs && chmod 777 /app/logs
+
+# Set the default command
+CMD ["python", "-m", "rag_startups.main", "generate_all", "--market", "--num", "3"]

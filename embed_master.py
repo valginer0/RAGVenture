@@ -131,7 +131,8 @@ def rag_chain_local(question, generator, prompt, retriever, lookup=None, num_ide
 
             # Format the idea with proper sections
             formatted_idea = f"\n{'='*50}\nStartup Idea #{len(formatted_ideas)+1}:\n"
-            formatted_idea += f"Company: {sections['Company']}\n\n"
+            # formatted_idea += f"Company: {sections['Company']}\n\n"
+            formatted_idea += f"Name: {sections['Company']}\n\n"
             formatted_idea += f"PROBLEM/OPPORTUNITY:\n{sections['Problem']}\n\n"
             formatted_idea += f"SOLUTION:\n{sections['Solution']}\n\n"
             formatted_idea += f"TARGET MARKET:\n{sections['Market']}\n\n"

@@ -7,12 +7,13 @@ services:
       - .:/app
       - model-cache:/root/.cache/torch/sentence_transformers  # Cache for sentence transformers
       - huggingface-cache:/root/.cache/huggingface  # Cache for HuggingFace models
+    env_file:
+      - .env
     environment:
       - PYTHONPATH=/app
-      - LOCAL_LANGUAGE_MODEL=gpt2
     ports:
       - "8000:8000"  # If we add a web interface later
-    command: python rag_startup_ideas.py --topic "AI/ML" --num-ideas 3
+    command: python -m rag_startups.cli --topic "AI/ML" --num-ideas 3
 
   app-gpu:
     build:
@@ -22,6 +23,8 @@ services:
       - .:/app
       - model-cache:/root/.cache/torch/sentence_transformers  # Cache for sentence transformers
       - huggingface-cache:/root/.cache/huggingface  # Cache for HuggingFace models
+    env_file:
+      - .env
     environment:
       - PYTHONPATH=/app
     deploy:
@@ -31,7 +34,7 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-    command: python rag_startup_ideas.py --topic "AI/ML" --num-ideas 3
+    command: python -m rag_startups.cli --topic "AI/ML" --num-ideas 3
 
 volumes:
   model-cache:  # Persistent volume for sentence transformers cache

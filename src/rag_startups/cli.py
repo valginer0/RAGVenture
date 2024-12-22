@@ -8,7 +8,12 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from embed_master import calculate_result, initialize_embeddings
+
+from .core.startup_metadata import StartupLookup
+from .data.loader import load_data
 from .idea_generator.generator import StartupIdeaGenerator
+from .idea_generator.processors import parse_ideas
 from .utils.caching import clear_cache
 
 app = typer.Typer(
@@ -68,7 +73,7 @@ def display_idea(idea_text: str, market_insights: Optional[dict] = None):
 
 
 @app.command()
-def generate(
+def generate_all(
     topic: str = typer.Argument(..., help="Topic or domain for the startup idea"),
     startup_file: str = typer.Option(
         "yc_startups.json",
@@ -77,7 +82,7 @@ def generate(
         help="Path to startup data file (must be provided by user)",
     ),
     num_ideas: int = typer.Option(
-        1, "--num", "-n", help="Number of startup ideas to generate (1-5)"
+        1, "--num-ideas", "-n", help="Number of startup ideas to generate (1-5)"
     ),
     market_analysis: bool = typer.Option(
         True, "--market/--no-market", help="Include market analysis"
@@ -89,12 +94,12 @@ def generate(
         help="Model temperature (0.0-1.0). Higher values make output more creative.",
     ),
 ):
-    """Generate startup ideas with optional market analysis."""
+    """adding the code to find startups examples here"""
+
     # Validate number of ideas
     if not 1 <= num_ideas <= 5:
         console.print("[red]Error:[/red] num_ideas must be between 1 and 5")
         raise typer.Exit(1)
-
     # Validate startup data file exists
     if not os.path.exists(startup_file):
         console.print(
@@ -103,14 +108,42 @@ def generate(
         )
         raise typer.Exit(1)
 
+    """Generate startup ideas with optional market analysis."""
+
     # Validate token
     token = validate_token()
 
+    question = (
+        f"Find innovative startup ideas in {topic}"
+        if " " in topic  # If it's a compound phrase like "education technology"
+        else f"Find innovative startup ideas in the {topic} domain"
+    )
+
+    prompt_messages = [
+        (
+            "system",
+            """
+            You are an assistant for question-answering tasks.
+            Use the following pieces of retrieved context to answer the question.
+            If you don't know the answer, just say that you don't know.
+            Use three sentences maximum and keep the answer concise.
+            Question: {question}
+            Context: {context}
+            Answer:""",
+        )
+    ]
+
     with console.status("[bold green]Generating startup ideas..."):
-        generator = StartupIdeaGenerator(token=token, startup_file=startup_file)
+        # Find startups in the file relevant to the topic
+        example_startups = find_relevant_startups(
+            startup_file, num_ideas, question, prompt_messages
+        )
+        example_startups_parsed = parse_ideas(example_startups)
+
+        generator = StartupIdeaGenerator(token=token)
         response, insights = generator.generate(
-            topic=topic,
             num_ideas=num_ideas,
+            example_startups=example_startups_parsed,
             temperature=temperature,
             include_market_analysis=market_analysis,
         )
@@ -120,6 +153,34 @@ def generate(
     else:
         console.print("[red]Failed to generate startup ideas.[/red]")
         raise typer.Exit(1)
+
+
+def find_relevant_startups(startup_file, num_ideas, question, prompt_messages):
+    df, json_data = load_data(startup_file, num_ideas)
+
+    # Initialize lookup with the JSON data
+    lookup = StartupLookup(json_data)
+
+    # Initialize embeddings and retriever once
+    retriever = initialize_embeddings(df)
+
+    # Pass retriever to calculate_result
+    result = calculate_result(
+        question=question,
+        retriever=retriever,
+        json_data=json_data,
+        prompt_messages=prompt_messages,
+        lookup=lookup,
+        num_ideas=num_ideas,
+    )
+
+    # Print the results in a nicely formatted way for testing only
+    from src.rag_startups.utils.output_formatter import formatter
+
+    formatter.print_startup_ideas(result)
+    formatter.print_summary()
+
+    return result
 
 
 @app.command()
