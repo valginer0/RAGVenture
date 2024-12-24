@@ -15,6 +15,7 @@ from .data.loader import load_data
 from .idea_generator.generator import StartupIdeaGenerator
 from .idea_generator.processors import parse_ideas
 from .utils.caching import clear_cache
+from .utils.output_formatter import formatter
 
 app = typer.Typer(
     name="rag_startups",
@@ -93,6 +94,9 @@ def generate_all(
         "-t",
         help="Model temperature (0.0-1.0). Higher values make output more creative.",
     ),
+    print_examples: bool = typer.Option(
+        False, "--print-examples", "-p", help="Print startup examples found in file"
+    ),
 ):
     """adding the code to find startups examples here"""
 
@@ -133,10 +137,14 @@ def generate_all(
         )
     ]
 
+    # Initialize lookup with the JSON data
+    df, json_data = load_data(startup_file)  # no max_lines
+    lookup = StartupLookup(json_data)
+
     with console.status("[bold green]Generating startup ideas..."):
         # Find startups in the file relevant to the topic
         example_startups = find_relevant_startups(
-            startup_file, num_ideas, question, prompt_messages
+            num_ideas, question, prompt_messages, print_examples, lookup, df, json_data
         )
         example_startups_parsed = parse_ideas(example_startups)
 
@@ -155,11 +163,9 @@ def generate_all(
         raise typer.Exit(1)
 
 
-def find_relevant_startups(startup_file, num_ideas, question, prompt_messages):
-    df, json_data = load_data(startup_file, num_ideas)
-
-    # Initialize lookup with the JSON data
-    lookup = StartupLookup(json_data)
+def find_relevant_startups(
+    num_ideas, question, prompt_messages, print_examples, lookup, df, json_data
+):
 
     # Initialize embeddings and retriever once
     retriever = initialize_embeddings(df)
@@ -174,11 +180,11 @@ def find_relevant_startups(startup_file, num_ideas, question, prompt_messages):
         num_ideas=num_ideas,
     )
 
-    # Print the results in a nicely formatted way for testing only
-    from src.rag_startups.utils.output_formatter import formatter
+    # Print the results in a nicely formatted way
 
-    formatter.print_startup_ideas(result)
-    formatter.print_summary()
+    if print_examples:
+        formatter.print_startup_ideas(result)
+        formatter.print_summary()
 
     return result
 

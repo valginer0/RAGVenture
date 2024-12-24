@@ -37,6 +37,7 @@ from src.rag_startups.utils.timing import timing_decorator
 logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
 logging.getLogger("chromadb").setLevel(logging.WARNING)
 logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.DEBUG)
 
 
 class CustomEmbeddingFunction:
@@ -131,8 +132,7 @@ def rag_chain_local(question, generator, prompt, retriever, lookup=None, num_ide
 
             # Format the idea with proper sections
             formatted_idea = f"\n{'='*50}\nStartup Idea #{len(formatted_ideas)+1}:\n"
-            # formatted_idea += f"Company: {sections['Company']}\n\n"
-            formatted_idea += f"Name: {sections['Company']}\n\n"
+            formatted_idea += f"Company: {sections['Company']}\n\n"
             formatted_idea += f"PROBLEM/OPPORTUNITY:\n{sections['Problem']}\n\n"
             formatted_idea += f"SOLUTION:\n{sections['Solution']}\n\n"
             formatted_idea += f"TARGET MARKET:\n{sections['Market']}\n\n"
