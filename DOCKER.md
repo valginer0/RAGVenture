@@ -42,13 +42,21 @@ You can customize the behavior by:
 
 Example command arguments:
 ```yaml
-command: python -m rag_startups.cli --topic "AI/ML" --num-ideas 5
+command: python -m src.rag_startups.cli generate-all --num-ideas 3 "fintech"
 ```
+
+Available command options:
+- `generate-all`: Generate startup ideas for a given topic
+  - Required: topic (e.g., "fintech", "AI/ML", "education")
+  - `--num-ideas`: Number of ideas to generate (1-5, default: 1)
+  - `--file`: Path to startup data file (default: yc_startups.json)
+  - `--market/--no-market`: Include/exclude market analysis (default: include)
+  - `--temperature`: Model creativity (0.0-1.0, default: 0.7)
+  - `--print-examples`: Show relevant startup examples found
 
 ## Volumes
 
 The setup includes persistent volumes for:
 - Model cache (sentence transformers)
-- HuggingFace cache
-
-This ensures faster subsequent runs by caching downloaded models.
+- Hugging Face cache
+- Log files

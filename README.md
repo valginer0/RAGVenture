@@ -66,7 +66,14 @@ export LANGCHAIN_PROJECT="your-project-name"
 
 3. **Generate Ideas**:
 ```bash
-python rag_startup_ideas.py --topic "AI" --num-ideas 1
+# Generate 3 startup ideas in the AI domain
+python -m src.rag_startups.cli generate-all "AI" --num-ideas 3
+
+# Generate ideas without market analysis
+python -m src.rag_startups.cli generate-all "fintech" --num-ideas 2 --no-market
+
+# Use custom startup data file
+python -m src.rag_startups.cli generate-all "education" --file custom_startups.json
 ```
 
 ## Features & Capabilities
@@ -78,10 +85,15 @@ python rag_startup_ideas.py --topic "AI" --num-ideas 1
   - Provides structured output with problem, solution, and market analysis
 
 ### Command-Line Interface
-- --topic: Target domain or area (required)
-- --num-ideas: Number of ideas to generate (default: 3)
-- --file: Custom startup data file (default: yc_startups.json)
-- --max-lines: Limit data processing (optional)
+Commands:
+- `generate-all`: Generate startup ideas with market analysis
+  - Required argument: Topic or domain (e.g., "AI", "fintech")
+  - Options:
+    - `--num-ideas`: Number of ideas (1-5, default: 1)
+    - `--file`: Custom startup data file (default: yc_startups.json)
+    - `--market/--no-market`: Include/exclude market analysis
+    - `--temperature`: Model creativity (0.0-1.0)
+    - `--print-examples`: Show relevant examples
 
 ### Technical Features
 - Smart Analysis:
@@ -142,7 +154,7 @@ pre-commit install  # Sets up automatic code formatting
 
 3. Run tests:
 ```bash
-pytest tests/  # Should show 31 passing tests
+pytest tests/  # Should show 68 passing tests
 ```
 
 ## Data Requirements
