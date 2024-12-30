@@ -1,5 +1,6 @@
 """Tests for the CLI interface."""
 
+import json
 import os
 from unittest.mock import MagicMock, patch
 
@@ -58,7 +59,14 @@ def mock_generator():
 def mock_startup_file(tmp_path):
     """Create a temporary startup data file for testing."""
     file_path = tmp_path / "test_startups.json"
-    file_path.write_text('{"startups": []}')
+    mock_data = [
+        {
+            "name": "Test Startup",
+            "description": "A test startup description",
+            "long_desc": "A longer test startup description for testing purposes",
+        }
+    ]
+    file_path.write_text(json.dumps(mock_data))
     return str(file_path)
 
 
@@ -66,7 +74,8 @@ def test_generate_command_success(mock_generator, mock_startup_file):
     """Test successful idea generation."""
     with patch.dict("os.environ", {"HUGGINGFACE_TOKEN": "test_token"}):
         result = runner.invoke(
-            app, ["generate", "AI/ML", "--num", "1", "--file", mock_startup_file]
+            app,
+            ["generate-all", "AI/ML", "--num-ideas", "1", "--file", mock_startup_file],
         )
         assert result.exit_code == 0
         assert "Generated Startup Idea" in result.stdout
@@ -80,9 +89,9 @@ def test_generate_command_no_market(mock_generator, mock_startup_file):
         result = runner.invoke(
             app,
             [
-                "generate",
+                "generate-all",
                 "AI/ML",
-                "--num",
+                "--num-ideas",
                 "1",
                 "--no-market",
                 "--file",
@@ -97,7 +106,9 @@ def test_generate_command_no_market(mock_generator, mock_startup_file):
 def test_generate_command_no_token(mock_startup_file):
     """Test handling of missing API token."""
     with patch.dict("os.environ", {}, clear=True):
-        result = runner.invoke(app, ["generate", "AI/ML", "--file", mock_startup_file])
+        result = runner.invoke(
+            app, ["generate-all", "AI/ML", "--file", mock_startup_file]
+        )
         assert result.exit_code == 1
         assert "HUGGINGFACE_TOKEN environment variable not set" in result.stdout
 
@@ -140,7 +151,8 @@ def test_invalid_num_ideas(mock_generator, mock_startup_file):
     """Test validation of number of ideas."""
     with patch.dict("os.environ", {"HUGGINGFACE_TOKEN": "test_token"}):
         result = runner.invoke(
-            app, ["generate", "AI/ML", "--num", "10", "--file", mock_startup_file]
+            app,
+            ["generate-all", "AI/ML", "--num-ideas", "10", "--file", mock_startup_file],
         )
         assert result.exit_code == 1
         assert "num_ideas must be between 1 and 5" in result.stdout
@@ -149,6 +161,8 @@ def test_invalid_num_ideas(mock_generator, mock_startup_file):
 def test_missing_startup_file(mock_generator):
     """Test handling of missing startup data file."""
     with patch.dict("os.environ", {"HUGGINGFACE_TOKEN": "test_token"}):
-        result = runner.invoke(app, ["generate", "AI/ML", "--file", "nonexistent.json"])
+        result = runner.invoke(
+            app, ["generate-all", "AI/ML", "--file", "nonexistent.json"]
+        )
         assert result.exit_code == 1
         assert "Startup data file 'nonexistent.json' not found" in result.stdout
