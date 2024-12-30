@@ -13,7 +13,7 @@ services:
       - PYTHONPATH=/app
     ports:
       - "8000:8000"  # If we add a web interface later
-    command: python -m rag_startups.cli --topic "AI/ML" --num-ideas 3
+    command: python -m src.rag_startups.cli generate-all --num-ideas 3 "fintech"
 
   app-gpu:
     build:
@@ -34,7 +34,7 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
-    command: python -m rag_startups.cli --topic "AI/ML" --num-ideas 3
+    command: python -m src.rag_startups.cli generate-all --num-ideas 3 "fintech"
 
 volumes:
   model-cache:  # Persistent volume for sentence transformers cache

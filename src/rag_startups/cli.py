@@ -98,7 +98,6 @@ def generate_all(
         False, "--print-examples", "-p", help="Print startup examples found in file"
     ),
 ):
-    """adding the code to find startups examples here"""
 
     # Validate number of ideas
     if not 1 <= num_ideas <= 5:
@@ -166,6 +165,7 @@ def generate_all(
 def find_relevant_startups(
     num_ideas, question, prompt_messages, print_examples, lookup, df, json_data
 ):
+    """the code to find startups examples here"""
 
     # Initialize embeddings and retriever once
     retriever = initialize_embeddings(df)
