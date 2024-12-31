@@ -8,33 +8,50 @@ The simplest way to use RAGVenture is through its command-line interface:
 
 ```bash
 # Generate a single AI startup idea
-python rag_startup_ideas.py --topic "AI" --num-ideas 1
+python -m src.rag_startups.cli generate-all "AI"
 
 # Generate multiple ideas for different domains
-python rag_startup_ideas.py --topic "Fintech" --num-ideas 3
-python rag_startup_ideas.py --topic "Healthcare" --num-ideas 2
+python -m src.rag_startups.cli generate-all "Fintech" --num-ideas 3
+python -m src.rag_startups.cli generate-all "Healthcare" --num-ideas 2 --temperature 0.8
+
+# Generate ideas without market analysis
+python -m src.rag_startups.cli generate-all "Education" --no-market
 
 # Use custom data source
-python rag_startup_ideas.py --topic "AI" --file "custom_startups.json"
+python -m src.rag_startups.cli generate-all "AI" --file "custom_startups.json"
+
+# Show relevant examples while generating
+python -m src.rag_startups.cli generate-all "Blockchain" --print-examples
 ```
 
 Expected output format:
 ```
-🚀 Generated Startup Ideas
-==================================================
-Startup Idea #1:
-Company: [Name]
+╭─────────────────────────── Generated Startup Idea ───────────────────────────╮
+│ Startup Idea #1:                                                             │
+│ Name: [Name]                                                                 │
+│                                                                             │
+│ Problem/Opportunity: [Problem description]                                   │
+│ Solution: [Solution details]                                                 │
+│ Target Market: [Market description]                                          │
+│ Unique Value: [Value proposition]                                           │
+╰─────────────────────────────────────────────────────────────────────────────╯
 
-PROBLEM/OPPORTUNITY: [Problem description]
-SOLUTION: [Solution details]
-TARGET MARKET: [Market description]
-UNIQUE VALUE: [Value proposition]
-==================================================
+                Market Analysis
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Metric            ┃ Value                 ┃
+┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━┩
+│ Market Size       │ $XXX.XX Billion       │
+│ Growth Rate       │ XX.X%                 │
+│ Competition       │ [Level]               │
+│ Opportunity Score │ X.XX                  │
+│ Risk Factors      │ • [Risk 1]           │
+│                   │ • [Risk 2]           │
+└───────────────────┴───────────────────────┘
 ```
 
 ## 🧪 Tested Examples
 
-These examples have been thoroughly tested and are part of our test suite (31 passing tests):
+These examples have been thoroughly tested and are part of our test suite (68 passing tests):
 
 ### 1. Basic Idea Generation
 
@@ -44,25 +61,18 @@ from rag_startups.data.loader import load_data
 from rag_startups.idea_generator.generator import StartupIdeaGenerator
 
 # Load startup data
-json_data = load_data("yc_startups.json")
+df, json_data = load_data("yc_startups.json")
 
 # Initialize generator
 generator = StartupIdeaGenerator()
 
-# Generate ideas with examples
-example_startups = [
-    "A platform helping companies manage their AI models in production",
-    "An AI-powered tool for automating customer support"
-]
-
-ideas = generator.generate(
+# Generate ideas
+ideas, market_insights = generator.generate(
+    "AI",
     num_ideas=1,
-    example_startups=example_startups,
-    temperature=0.7
+    temperature=0.7,
+    with_market_analysis=True
 )
-
-print(ideas)
-```
 
 ### 2. Performance Expectations
 

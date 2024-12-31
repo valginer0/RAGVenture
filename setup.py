@@ -10,13 +10,13 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="rag_startups",
-    version="0.1.0",
+    version="0.9.0",
     author="Val Giner",
-    author_email="valginer0@gmail.com",  # Replace with your email
+    author_email="valginer0@gmail.com",
     description="An intelligent startup idea generator using RAG technology",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/rag_startups",  # Replace with your repo URL
+    url="https://github.com/valginer0/rag_startups",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     classifiers=[

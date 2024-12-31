@@ -2,27 +2,42 @@
 
 This document provides detailed information about RAGVenture's Python API.
 
-## Main Script
+## Command Line Interface
 
-The main entry point is `rag_startup_ideas.py` in the root directory. It provides a command-line interface for generating startup ideas using RAG technology.
-
-### Command Line Usage
+The main entry point is through the CLI module. Access it using:
 
 ```bash
-python rag_startup_ideas.py --topic "your topic" [options]
+python -m src.rag_startups.cli [command] [arguments]
 ```
 
-#### Required Arguments
-- `--topic`: Topic or domain to generate startup ideas for (e.g., 'healthcare', 'education technology')
+### Commands
 
-#### Optional Arguments
-- `--file`: Path to the JSON file containing startup data (default: yc_startups.json)
-- `--max-lines`: Maximum number of lines to process
-- `--num-ideas`: Number of startup ideas to generate (default: 3)
+#### generate-all
+
+Generate startup ideas with optional market analysis.
+
+```bash
+python -m src.rag_startups.cli generate-all "your topic" [options]
+```
+
+##### Required Arguments
+- Topic or domain to generate startup ideas for (e.g., 'healthcare', 'education technology')
+
+##### Optional Arguments
+- `--num-ideas`: Number of ideas to generate (1-5, default: 1)
+- `--file`: Path to startup data file (default: yc_startups.json)
+- `--market/--no-market`: Include/exclude market analysis (default: include)
+- `--temperature`: Model creativity (0.0-1.0, default: 0.7)
+- `--print-examples`: Show relevant startup examples found in data
 
 ### Environment Variables
 
-To use LangSmith tracking, set up these environment variables:
+Required:
+```bash
+HUGGINGFACE_TOKEN="your-huggingface-token"  # Required for text generation
+```
+
+Optional LangSmith tracking:
 ```bash
 LANGCHAIN_TRACING_V2=true
 LANGCHAIN_ENDPOINT="https://api.smith.langchain.com"
@@ -109,10 +124,10 @@ print(result)
 
 ```bash
 # Generate 5 healthcare startup ideas
-python rag_startup_ideas.py --topic "healthcare" --num-ideas 5
+python -m src.rag_startups.cli generate-all "healthcare" --num-ideas 5
 
 # Use a different dataset with limited entries
-python rag_startup_ideas.py --topic "education" --file "custom_startups.json" --max-lines 1000
+python -m src.rag_startups.cli generate-all "education" --file "custom_startups.json" --max-lines 1000
 ```
 
 ### Custom Configuration

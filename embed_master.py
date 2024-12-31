@@ -37,6 +37,7 @@ from src.rag_startups.utils.timing import timing_decorator
 logging.getLogger("sentence_transformers").setLevel(logging.WARNING)
 logging.getLogger("chromadb").setLevel(logging.WARNING)
 logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.DEBUG)
 
 
 class CustomEmbeddingFunction:

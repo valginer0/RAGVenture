@@ -4,9 +4,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rag_startups"
-version = "0.1.0"
+version = "0.9.0"
 authors = [
-    { name = "Your Name", email = "your.email@example.com" },
+    { name = "Val Giner", email = "valginer0@gmail.com" },
 ]
 description = "RAG-based startup ideas generation"
 readme = "README.md"

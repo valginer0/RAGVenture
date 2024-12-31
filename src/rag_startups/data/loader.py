@@ -42,9 +42,11 @@ def load_data(
 
         # Create DataFrame for RAG
         df = raw_data.copy()
-        if max_lines:
-            df = df.head(max_lines)
-            json_data = json_data[:max_lines]
+
+        if not max_lines:
+            max_lines = len(json_data)
+        df = df.head(max_lines)
+        json_data = json_data[:max_lines]
 
         # Keep only necessary columns for RAG
         if "long_desc" in df.columns:
@@ -54,8 +56,10 @@ def load_data(
         else:
             raise DataLoadError("No description column found in data")
 
+        # Remove duplicates and null values before filling remaining nulls
         df.drop_duplicates(subset=df.columns[0], inplace=True)
         df = df[df[df.columns[0]].notna()]
+        df = df.fillna("")
 
         return df, json_data
     except ValueError as e:

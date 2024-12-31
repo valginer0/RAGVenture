@@ -1,29 +1,41 @@
 version: '3.8'
 
 services:
-  redis:
-    image: redis:7-alpine
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis-data:/data
-    command: redis-server --appendonly yes
-
   app-cpu:
     build: .
+    volumes:
+      - .:/app
+      - model-cache:/root/.cache/torch/sentence_transformers  # Cache for sentence transformers
+      - huggingface-cache:/root/.cache/huggingface  # Cache for HuggingFace models
+    env_file:
+      - .env
     environment:
       - PYTHONPATH=/app
-      - LOCAL_LANGUAGE_MODEL=gpt2
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - BLS_API_KEY=${BLS_API_KEY}
-      - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
-      - STARTUP_TOPIC=${STARTUP_TOPIC:-AI/ML}
     ports:
-      - "8000:8000"
-    depends_on:
-      - redis
-    command: python -m rag_startups.main generate --market --num 3 --topic "${STARTUP_TOPIC:-AI/ML}"
+      - "8000:8000"  # If we add a web interface later
+    command: python -m src.rag_startups.cli generate-all --num-ideas 3 "fintech"
+
+  app-gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile.gpu
+    volumes:
+      - .:/app
+      - model-cache:/root/.cache/torch/sentence_transformers  # Cache for sentence transformers
+      - huggingface-cache:/root/.cache/huggingface  # Cache for HuggingFace models
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: python -m src.rag_startups.cli generate-all --num-ideas 3 "fintech"
 
 volumes:
-  redis-data:
+  model-cache:  # Persistent volume for sentence transformers cache
+  huggingface-cache:  # Persistent volume for HuggingFace models

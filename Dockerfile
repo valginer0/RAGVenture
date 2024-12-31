@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the entire project into the container
+# Copy the entire project
 COPY . .
 
 # Install Python dependencies - force CPU versions
@@ -22,7 +22,7 @@ RUN pip install --no-cache-dir \
     torch==2.1.0+cpu \
     torchvision==0.16.0+cpu \
     -f https://download.pytorch.org/whl/torch_stable.html && \
-    pip install --no-cache-dir -e .
+    pip install --no-cache-dir -r requirements.txt
 
 # Install and download spaCy model
 RUN pip install --no-cache-dir spacy && \
@@ -34,6 +34,3 @@ ENV PYTHONPATH=/app
 
 # Create directory for logs
 RUN mkdir -p /app/logs && chmod 777 /app/logs
-
-# Set the default command
-CMD ["python", "-m", "rag_startups.main", "generate", "--market", "--num", "3"]

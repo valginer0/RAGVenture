@@ -23,14 +23,14 @@ MAX_LINES: Maximum number of lines to process from the data file (default: 50000
 
 import sys
 
+from .cli import app
+
 
 def main():
     """
     Main entry point that uses the CLI interface
     """
-    from .cli import main as cli_main
-
-    return cli_main()
+    return app()
 
 
 if __name__ == "__main__":
