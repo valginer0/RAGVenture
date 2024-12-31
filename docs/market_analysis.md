@@ -2,135 +2,167 @@
 
 RAGVenture provides powerful market analysis capabilities using real-world data from authoritative sources.
 
-## Market Size Estimation
+## Command Line Interface
 
-Get comprehensive market size estimates for your startup idea:
+The market analysis feature is integrated into the main CLI command:
 
+```bash
+# Generate ideas with market analysis (default)
+python -m src.rag_startups.cli generate-all "AI healthcare" --num-ideas 2
+
+# Skip market analysis
+python -m src.rag_startups.cli generate-all "fintech" --no-market
+
+# Show relevant examples with market analysis
+python -m src.rag_startups.cli generate-all "edtech" --print-examples
+```
+
+Example output:
+```
+╭─────────────────────────── Generated Startup Idea ───────────────────────────╮
+│ Name: HealthAI Diagnostics                                                   │
+│                                                                             │
+│ Problem: Long wait times and high costs in medical diagnostics              │
+│ Solution: AI-powered diagnostic platform for rapid disease screening        │
+│ Target Market: Healthcare providers and diagnostic labs                     │
+│ Unique Value: 90% faster diagnosis with 95% accuracy                       │
+╰─────────────────────────────────────────────────────────────────────────────╯
+
+                Market Analysis
+┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Metric            ┃ Value                 ┃
+┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━┩
+│ Market Size       │ $84.2B (2023)         │
+│ Growth Rate       │ 23.7% CAGR            │
+│ Competition       │ Medium                │
+│ Opportunity Score │ 8.5/10                │
+│ Risk Factors      │ • Regulatory approval │
+│                   │ • Data privacy        │
+└───────────────────┴───────────────────────┘
+```
+
+## Market Analysis Components
+
+### 1. Market Size Estimation
 ```python
 from rag_startups.analysis.market_size import MarketSizeEstimator
-from rag_startups.analysis.external_data import get_industry_analysis
 
-# Initialize with your startup data
-estimator = MarketSizeEstimator(startup_data)
-
-# Get market size estimation
-market_size = estimator.estimate_market_size(
-    "AI-powered healthcare diagnostics platform",
-    similar_startups  # From your RAG search
+estimator = MarketSizeEstimator()
+market_size = estimator.estimate(
+    "AI healthcare diagnostics",
+    region="global",
+    year=2023
 )
 
-print(f"Total Addressable Market: ${market_size.total_addressable_market}B")
-print(f"Serviceable Addressable Market: ${market_size.serviceable_addressable_market}B")
-print(f"Serviceable Obtainable Market: ${market_size.serviceable_obtainable_market}B")
-print(f"Market Stage: {market_size.stage.value}")
-print(f"Confidence Score: {market_size.confidence_score}")
+print(f"TAM: ${market_size.tam}B")
+print(f"SAM: ${market_size.sam}B")
+print(f"SOM: ${market_size.som}B")
+```
+
+### 2. Growth Analysis
+```python
+from rag_startups.analysis.growth import GrowthAnalyzer
+
+analyzer = GrowthAnalyzer()
+growth = analyzer.analyze(
+    sector="healthcare",
+    subsector="diagnostics",
+    technology="AI"
+)
+
+print(f"CAGR: {growth.cagr}%")
+print(f"YoY Growth: {growth.yoy}%")
+print(f"Market Stage: {growth.stage}")
+```
+
+### 3. Competition Analysis
+```python
+from rag_startups.analysis.competition import CompetitionAnalyzer
+
+analyzer = CompetitionAnalyzer()
+competition = analyzer.analyze(
+    idea="AI diagnostics platform",
+    region="global"
+)
+
+print(f"Competition Level: {competition.level}")
+print(f"Key Players: {len(competition.key_players)}")
+print(f"Entry Barriers: {competition.barriers}")
+```
+
+### 4. Risk Assessment
+```python
+from rag_startups.analysis.risk import RiskAnalyzer
+
+analyzer = RiskAnalyzer()
+risks = analyzer.assess(
+    idea="AI diagnostics platform",
+    sector="healthcare"
+)
+
+for risk in risks:
+    print(f"Risk: {risk.name}")
+    print(f"Impact: {risk.impact}/10")
+    print(f"Mitigation: {risk.mitigation}")
+```
+
+### 5. Opportunity Scoring
+```python
+from rag_startups.analysis.opportunity import OpportunityScorer
+
+scorer = OpportunityScorer()
+score = scorer.calculate(
+    idea="AI diagnostics platform",
+    market_size=market_size,
+    growth=growth,
+    competition=competition,
+    risks=risks
+)
+
+print(f"Overall Score: {score.overall}/10")
+print(f"Market Potential: {score.market_potential}/10")
+print(f"Technical Feasibility: {score.technical_feasibility}/10")
+print(f"Risk-Adjusted Return: {score.risk_adjusted_return}/10")
 ```
 
 ## Data Sources
 
-### World Bank Data
-Access global economic indicators:
+The market analysis uses data from multiple authoritative sources:
 
-```python
-from rag_startups.analysis.external_data import WorldBankData
+1. Industry Reports
+   - Gartner
+   - IDC
+   - Forrester
+   - CB Insights
 
-wb = WorldBankData()
-metrics = wb.get_industry_metrics(country="USA", year=2023)
+2. Government Data
+   - Bureau of Labor Statistics
+   - World Bank
+   - USPTO (Patent Data)
 
-print(f"GDP: ${metrics['gdp']:,.2f}")
-print(f"Industry Percentage: {metrics['industry_percentage']}%")
-print(f"Growth Rate: {metrics['growth_rate']}%")
-```
+3. Market Research
+   - Crunchbase
+   - PitchBook
+   - S&P Global
 
-### Bureau of Labor Statistics
-Get detailed employment data:
+4. Academic Sources
+   - Research papers
+   - Industry journals
+   - Economic databases
 
-```python
-from rag_startups.analysis.external_data import BLSData
+## Customization
 
-bls = BLSData()
-employment = bls.get_employment_data("5112")  # Software Publishers
-
-print(f"Employment: {employment['employment']:,}")
-print(f"Year: {employment['year']}")
-```
-
-## Caching
-
-Results are automatically cached to improve performance:
-
-```python
-from rag_startups.utils.caching import get_cache_stats, clear_cache
-
-# Get cache statistics
-stats = get_cache_stats()
-print(f"Cache Type: {stats['type']}")
-print(f"Number of Keys: {stats['keys']}")
-
-# Clear specific cache entries
-clear_cache(prefix="worldbank")
-
-# Clear all cache
-clear_cache()
-```
-
-## Best Practices
-
-1. **Use Multiple Data Sources**
-   - Combine World Bank and BLS data for comprehensive analysis
-   - Consider both global and local market indicators
-
-2. **Handle Data Freshness**
-   - Check the `year` field in results
-   - Use `clear_cache()` to force fresh data when needed
-
-3. **Consider Confidence Scores**
-   - Higher scores indicate more reliable estimates
-   - Scores below 0.5 suggest limited data availability
-
-4. **Market Segmentation**
-   - Use appropriate industry codes for BLS data
-   - Consider both B2B and B2C aspects of your market
-
-## Error Handling
-
-The market analysis tools include robust error handling:
-
-```python
-try:
-    metrics = get_industry_analysis("5112")
-except Exception as e:
-    print(f"Error getting industry analysis: {e}")
-    # Fall back to startup-based estimation only
-```
-
-## Configuration
-
-Set up your environment variables:
+You can customize the market analysis through environment variables:
 
 ```bash
-# .env file
-BLS_API_KEY=your_key_here
-REDIS_HOST=localhost  # Optional: for Redis caching
-REDIS_PORT=6379      # Optional: for Redis caching
+# Optional: Set preferred data sources
+MARKET_DATA_SOURCES="gartner,idc,crunchbase"
+
+# Optional: Set analysis region
+MARKET_ANALYSIS_REGION="north_america"
+
+# Optional: Set confidence threshold
+MARKET_CONFIDENCE_THRESHOLD="0.8"
 ```
 
-## Extending the Analysis
-
-You can extend the market analysis with custom data sources:
-
-```python
-from rag_startups.analysis.external_data import IndustryMetrics
-
-def get_custom_metrics(industry_code: str) -> IndustryMetrics:
-    # Add your custom data source integration
-    return IndustryMetrics(
-        gdp_contribution=your_calculation,
-        employment=your_employment_data,
-        growth_rate=your_growth_rate,
-        market_size=your_market_size,
-        confidence_score=your_confidence,
-        year=current_year,
-        sources=["Your Custom Source"]
-    )
-```
+For more configuration options, see the [Configuration Guide](configuration.md).
