@@ -15,7 +15,7 @@ By participating in this project, you are expected to uphold our Code of Conduct
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/your-username/rag_startups.git`
+2. Clone your fork: `git clone https://github.com/valginer0/rag_startups.git`
 3. Create your feature branch: `git checkout -b feature/amazing-feature`
 4. Set up development environment:
    ```bash
@@ -121,7 +121,7 @@ Enhancement suggestions are tracked as GitHub issues. When suggesting an enhance
 1. **Environment Setup**
    ```bash
    # Clone your fork
-   git clone https://github.com/your-username/rag_startups.git
+   git clone https://github.com/valginer0/rag_startups.git
    cd rag_startups
 
    # Create virtual environment

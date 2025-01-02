@@ -1,6 +1,6 @@
 site_name: RAG Startups
 site_description: Documentation for the RAG-based startup ideas generation project
-repo_url: https://github.com/yourusername/rag_startups
+repo_url: https://github.com/valginer0/rag_startups
 docs_dir: docs
 site_dir: site
 

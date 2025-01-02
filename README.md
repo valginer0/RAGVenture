@@ -33,7 +33,7 @@ Traditional startup ideation tools either rely on expensive API calls or generat
 1. **Installation**:
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/RAGVenture.git
+git clone https://github.com/valginer0/RAGVenture.git
 cd RAGVenture
 
 # Create virtual environment
@@ -140,7 +140,7 @@ docker-compose up app-gpu
 
 1. Clone and setup:
 ```bash
-git clone https://github.com/yourusername/RAGVenture.git
+git clone https://github.com/valginer0/RAGVenture.git
 cd RAGVenture
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
