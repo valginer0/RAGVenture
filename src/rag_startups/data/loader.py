@@ -38,6 +38,7 @@ def load_data(
         # Load raw JSON first
         with open(file_path, "r", encoding="utf-8") as f:
             raw_data = pd.read_json(f)
+            raw_data = raw_data.fillna("")
             json_data = raw_data.to_dict("records")
 
         # Create DataFrame for RAG
