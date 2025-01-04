@@ -32,6 +32,3 @@ COPY . .
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
-
-# Create directory for logs
-RUN mkdir -p /app/logs && chmod 777 /app/logs
