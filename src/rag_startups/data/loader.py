@@ -59,7 +59,8 @@ def load_data(
 
         # Remove duplicates and null values before filling remaining nulls
         df.drop_duplicates(subset=df.columns[0], inplace=True)
-        df = df[df[df.columns[0]].notna()]
+        first_col = df.columns[0]
+        df = df[df[first_col].notna() & (df[first_col] != "")]
         df = df.fillna("")
 
         return df, json_data
