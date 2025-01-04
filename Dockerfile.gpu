@@ -12,6 +12,8 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements first to leverage Docker cache
+COPY README.md .
+COPY requirements.txt .
 COPY pyproject.toml .
 COPY setup.py .
 
