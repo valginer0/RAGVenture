@@ -35,6 +35,3 @@ ENV PYTHONPATH=/app
 
 # Create directory for logs
 RUN mkdir -p /app/logs && chmod 777 /app/logs
-
-# Default command
-CMD ["python3", "rag_startup_ideas.py"]
