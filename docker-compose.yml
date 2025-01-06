@@ -1,7 +1,4 @@
-
 services:
-
-
   app-cpu:
     build: .
     volumes:
@@ -28,13 +25,25 @@ services:
       - .env
     environment:
       - PYTHONPATH=/app
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    ports:
+      - "8001:8000"
+    command: python -m src.rag_startups.cli generate-all --num-ideas 3 "fintech"
+
+  # Test service for GPU code without actual GPU
+  app-gpu-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    volumes:
+      - .:/app
+      - model-cache:/root/.cache/torch/sentence_transformers  # Cache for sentence transformers
+      - huggingface-cache:/root/.cache/huggingface  # Cache for HuggingFace models
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+    ports:
+      - "8002:8000"
     command: python -m src.rag_startups.cli generate-all --num-ideas 3 "fintech"
 
 volumes:
