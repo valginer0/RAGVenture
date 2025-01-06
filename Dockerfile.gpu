@@ -11,11 +11,7 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy requirements first to leverage Docker cache
-COPY README.md .
-COPY requirements.txt .
-COPY pyproject.toml .
-COPY setup.py .
+COPY . .
 
 # Install Python dependencies with GPU support
 RUN pip3 install --no-cache-dir \
@@ -28,8 +24,6 @@ RUN pip3 install --no-cache-dir \
 RUN pip3 install --no-cache-dir spacy && \
     python3 -m spacy download en_core_web_sm
 
-# Copy the rest of the application
-COPY . .
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
