@@ -52,7 +52,7 @@ def display_idea(idea_text: str, market_insights: Optional[dict] = None):
 
         for name, insights in market_insights.items():
             table.add_row("Startup Name", name)
-            table.add_row("Market Size", f"${insights.market_size:,.2f}")
+            table.add_row("Market Size", f"${insights.market_size:,.2f}B")
             table.add_row("Growth Rate", f"{insights.growth_rate:.1f}%")
             table.add_row("Competition", insights.competition_level)
             table.add_row("Opportunity Score", f"{insights.opportunity_score:.2f}")
