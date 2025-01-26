@@ -3,6 +3,7 @@ Response processing utilities for startup idea generation.
 """
 
 import re
+import uuid
 from typing import Dict, List, Optional
 
 
@@ -30,6 +31,20 @@ def standardize_field_names(text: str) -> str:
         text = pattern.sub(f"{field.title()}:", text)
 
     return text
+
+
+def generate_unique_name_suffix(name: str) -> str:
+    """
+    Generate a unique company name by appending a short UID suffix.
+
+    Args:
+        name: Original company name
+
+    Returns:
+        Company name with unique suffix (e.g., "TechStartup-x7y9z")
+    """
+    uid = uuid.uuid4().hex[:5]  # Using first 5 characters of UUID4
+    return f"{name}-{uid}"
 
 
 def clean_response(response: str) -> Optional[str]:
@@ -92,7 +107,8 @@ def parse_ideas(cleaned_response: str) -> Optional[List[Dict[str, str]]]:
 
             # Only add idea if we have the minimum required fields
             if name_match and problem_match and solution_match and market_match:
-                idea_dict["name"] = name_match.group(1).strip()
+                original_name = name_match.group(1).strip()
+                idea_dict["name"] = generate_unique_name_suffix(original_name)
                 idea_dict["problem"] = problem_match.group(1).strip()
                 idea_dict["solution"] = solution_match.group(1).strip()
                 idea_dict["target_market"] = market_match.group(1).strip()
