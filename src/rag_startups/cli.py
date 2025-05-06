@@ -98,6 +98,12 @@ def generate_all(
         False, "--print-examples", "-p", help="Print startup examples found in file"
     ),
 ):
+    """Generate startup ideas with optional market analysis.
+
+    Each generated startup name includes a unique identifier (e.g., TechStartup-x7y9z).
+    Note: Generated names are suggestions only. Users must verify legal availability
+    before use. See README.md for more information about name verification.
+    """
 
     # Validate number of ideas
     if not 1 <= num_ideas <= 5:

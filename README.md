@@ -198,3 +198,25 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
 ## License
 
 This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
+
+## Startup Names and Legal Considerations
+
+### Name Generation
+- Each generated startup name includes a unique identifier (e.g., "TechStartup-x7y9z")
+- This identifier ensures technical uniqueness within the tool
+- The unique identifier is NOT a substitute for legal name verification
+
+### Important Notes for Users
+- Generated names are suggestions only
+- The uniqueness of a name at generation time does not guarantee its availability
+- Users must perform their own due diligence before using any name
+
+### Name Verification Resources
+- USPTO Trademark Database: https://www.uspto.gov/trademarks
+- State Business Registries
+- Domain Name Availability Tools
+- Professional Legal Counsel
+
+### Future Features
+- Name availability checking tool (planned)
+- Integration with business registry APIs
