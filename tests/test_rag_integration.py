@@ -8,11 +8,12 @@ from unittest.mock import Mock, patch
 import pandas as pd
 import pytest
 
+import src.rag_startups.core.rag_chain as rag_chain_module
 from src.rag_startups.core.rag_chain import (
     format_startup_idea,
+    get_similar_description,
     initialize_rag,
     rag_chain_local,
-    startup_lookup,
 )
 from src.rag_startups.core.startup_metadata import StartupLookup
 
@@ -104,40 +105,50 @@ class TestRAGIntegration:
 
     def test_error_handling_in_rag_pipeline(self, sample_df, sample_json_data):
         """Test error scenarios in RAG processing."""
-        # Test with None retriever
-        with pytest.raises((AttributeError, TypeError)):
-            format_startup_idea("test description", None, None)
+        # Test with None retriever - should work gracefully with new implementation
+        result = format_startup_idea("test description", None, None)
+        assert isinstance(result, dict)
+        assert "Company" in result
 
-        # Test with invalid data
+        # Test with invalid DataFrame
         with pytest.raises((ValueError, TypeError)):
             initialize_rag(None, sample_json_data)
 
-        with pytest.raises((ValueError, TypeError)):
+        # Test with None json_data - should raise TypeError due to iteration
+        with pytest.raises(TypeError):
             initialize_rag(sample_df, None)
 
     def test_global_state_behavior(self, sample_df, sample_json_data):
-        """Document current global state behavior before refactoring."""
-        # Test that global startup_lookup is set after initialization
-        initial_global_state = startup_lookup
+        """Test that global state is properly maintained for backward compatibility."""
+        # Access global variable through module to avoid stale import issue
+        initial_global_state = rag_chain_module.startup_lookup
 
         retriever, lookup = initialize_rag(sample_df, sample_json_data)
 
-        # Verify global state changed
-        assert startup_lookup is not None, "Global startup_lookup should be set"
+        # Verify global state is properly set after initialization
         assert (
-            startup_lookup != initial_global_state
+            rag_chain_module.startup_lookup is not None
+        ), "Global startup_lookup should be set"
+        assert (
+            rag_chain_module.startup_lookup != initial_global_state
         ), "Global state should have changed"
+        assert lookup is not None, "Returned startup_lookup should be set"
+        assert (
+            rag_chain_module.startup_lookup is lookup
+        ), "Global and returned lookup should be the same"
 
-        # Test that the global state affects format_startup_idea
+        # Test that both approaches work with backward compatibility
         test_description = "AI startup"
         formatted_with_global = format_startup_idea(test_description, retriever)
         formatted_with_explicit = format_startup_idea(
             test_description, retriever, lookup
         )
 
-        # Both should work but might behave differently
+        # Both should work and return valid dictionaries
         assert isinstance(formatted_with_global, dict)
         assert isinstance(formatted_with_explicit, dict)
+        assert "Company" in formatted_with_global
+        assert "Company" in formatted_with_explicit
 
     def test_startup_lookup_isolation(self, sample_json_data):
         """Test that startup lookup can be injected independently."""
