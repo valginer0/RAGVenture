@@ -3,12 +3,13 @@ Dependency patterns tests.
 These tests prepare for dependency injection refactoring.
 """
 
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, Mock, mock_open, patch
 
 import pandas as pd
 import pytest
 
-from src.rag_startups.core.rag_chain import initialize_rag, startup_lookup
+import src.rag_startups.core.rag_chain as rag_chain_module
+from src.rag_startups.core.rag_chain import format_startup_idea, initialize_rag
 from src.rag_startups.core.startup_metadata import StartupLookup
 from src.rag_startups.data.loader import initialize_startup_lookup, load_data
 
@@ -64,18 +65,18 @@ class TestDependencyPatterns:
 
     def test_global_state_isolation(self, sample_df, sample_json_data):
         """Test current global state behavior for isolation planning."""
-        # Store initial global state
-        initial_global = startup_lookup
+        # Store initial global state - access through module to avoid stale import
+        initial_global = rag_chain_module.startup_lookup
 
         # Initialize RAG (this modifies global state)
         retriever1, lookup1 = initialize_rag(sample_df, sample_json_data)
-        global_after_init1 = startup_lookup
+        global_after_init1 = rag_chain_module.startup_lookup
 
         # Initialize again with different data
         smaller_data = sample_json_data[:1]
         smaller_df = sample_df.iloc[:1]
         retriever2, lookup2 = initialize_rag(smaller_df, smaller_data)
-        global_after_init2 = startup_lookup
+        global_after_init2 = rag_chain_module.startup_lookup
 
         # Document current behavior
         assert global_after_init1 is not initial_global
@@ -108,9 +109,11 @@ class TestDependencyPatterns:
         mock_data = [{"name": "MockStartup", "description": "Mock description"}]
         mock_df = pd.DataFrame(mock_data)
 
-        with patch("src.rag_startups.data.loader.pd.read_json") as mock_read_json:
-            with patch("src.rag_startups.data.loader.os.path.exists") as mock_exists:
-                mock_exists.return_value = True
+        # Mock file operations and pandas read_json
+        mock_file_content = mock_df.to_json(orient="records")
+
+        with patch("builtins.open", mock_open(read_data=mock_file_content)):
+            with patch("src.rag_startups.data.loader.pd.read_json") as mock_read_json:
                 mock_read_json.return_value = mock_df
 
                 # Test that load_data returns both df and json_data

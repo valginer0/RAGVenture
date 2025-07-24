@@ -6,6 +6,7 @@ These tests ensure safe refactoring of configuration handling.
 import os
 from unittest.mock import Mock, patch
 
+import click
 import pytest
 
 from src.rag_startups.cli import validate_token
@@ -24,14 +25,14 @@ class TestConfigurationValidation:
 
         # Test with missing token
         with patch.dict(os.environ, {}, clear=True):
-            with pytest.raises(SystemExit):
+            with pytest.raises(click.exceptions.Exit):
                 validate_token()
 
     def test_configuration_edge_cases(self):
         """Test missing/invalid configuration scenarios."""
         # Test empty token
         with patch.dict(os.environ, {"HUGGINGFACE_TOKEN": ""}):
-            with pytest.raises(SystemExit):
+            with pytest.raises(click.exceptions.Exit):
                 validate_token()
 
         # Test whitespace-only token
