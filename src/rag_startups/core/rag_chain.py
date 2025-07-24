@@ -82,13 +82,13 @@ def get_similar_description(description: str, retriever: Any) -> Optional[str]:
 
 
 def format_startup_idea(
-    description: str, retriever: Any = None, startup_lookup_param: Optional[Any] = None
+    description: str, retriever: Any = None, startup_lookup: Optional[Any] = None
 ) -> dict:
     """Format a startup description into a structured format.
 
     This function maintains backward compatibility while using RAGService internally.
     """
-    global _global_rag_service, startup_lookup
+    global _global_rag_service
 
     # If we have a global service, use it
     if _global_rag_service:
@@ -96,8 +96,10 @@ def format_startup_idea(
 
     # Fallback to original implementation for backward compatibility
     # Use the parameter if provided, otherwise use global
+    # Access global variable through globals() to avoid shadowing issues
+    global_startup_lookup = globals().get("startup_lookup")
     lookup_to_use = (
-        startup_lookup_param if startup_lookup_param is not None else startup_lookup
+        startup_lookup if startup_lookup is not None else global_startup_lookup
     )
 
     # Ensure description is a string
