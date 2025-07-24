@@ -1,4 +1,8 @@
-"""Core RAG chain functionality."""
+"""Core RAG chain functionality with backward compatibility.
+
+This module provides backward compatibility for the old global state pattern
+while internally using the new dependency injection approach via RAGService.
+"""
 
 import re
 from typing import Any, List, Optional, Tuple
@@ -13,8 +17,13 @@ from ..data.loader import create_documents, initialize_startup_lookup, split_doc
 from ..embeddings.embedding import create_vectorstore, setup_retriever
 from ..utils.exceptions import ModelError
 from ..utils.timing import timing_decorator
+from .rag_service import RAGService
 
-# Global lookup instance
+# Global RAG service instance for backward compatibility
+# TODO: Remove this global state in future versions
+_global_rag_service = None
+
+# Backward compatibility - maintain the old global lookup reference
 startup_lookup = None
 
 
@@ -22,13 +31,18 @@ startup_lookup = None
 def initialize_rag(df: pd.DataFrame, json_data: list):
     """Initialize RAG system and lookup.
 
+    This function maintains backward compatibility while using the new RAGService internally.
+
     Args:
         df: DataFrame containing startup data
         json_data: Raw JSON data for startup lookup
-    """
-    global startup_lookup
 
-    # Initialize lookup
+    Returns:
+        Tuple of (retriever, startup_lookup) for backward compatibility
+    """
+    global startup_lookup, _global_rag_service
+
+    # Initialize lookup first
     startup_lookup = initialize_startup_lookup(json_data)
 
     # Create and prepare documents
@@ -37,11 +51,27 @@ def initialize_rag(df: pd.DataFrame, json_data: list):
 
     # Setup retriever
     vectorstore = create_vectorstore(splits)
-    return setup_retriever(vectorstore), startup_lookup
+    retriever = setup_retriever(vectorstore)
+
+    # Create RAG service instance with the lookup and retriever
+    _global_rag_service = RAGService(startup_lookup)
+    _global_rag_service.retriever = retriever
+
+    return retriever, startup_lookup
 
 
 def get_similar_description(description: str, retriever: Any) -> Optional[str]:
-    """Get most similar description from the vector store."""
+    """Get most similar description from the vector store.
+
+    This function maintains backward compatibility while delegating to RAGService.
+    """
+    global _global_rag_service
+
+    # If we have a global service, use it
+    if _global_rag_service:
+        return _global_rag_service.get_similar_description(description)
+
+    # Fallback to original implementation for backward compatibility
     if not retriever:
         return None
     if not description:
@@ -52,9 +82,24 @@ def get_similar_description(description: str, retriever: Any) -> Optional[str]:
 
 
 def format_startup_idea(
-    description: str, retriever: Any, startup_lookup: Optional[Any] = None
+    description: str, retriever: Any = None, startup_lookup_param: Optional[Any] = None
 ) -> dict:
-    """Format a startup description into a structured format."""
+    """Format a startup description into a structured format.
+
+    This function maintains backward compatibility while using RAGService internally.
+    """
+    global _global_rag_service, startup_lookup
+
+    # If we have a global service, use it
+    if _global_rag_service:
+        return _global_rag_service.format_startup_idea(description)
+
+    # Fallback to original implementation for backward compatibility
+    # Use the parameter if provided, otherwise use global
+    lookup_to_use = (
+        startup_lookup_param if startup_lookup_param is not None else startup_lookup
+    )
+
     # Ensure description is a string
     if not isinstance(description, str):
         if hasattr(description, "page_content"):
@@ -71,8 +116,8 @@ def format_startup_idea(
 
     # Get metadata if we found a similar description and have a lookup
     metadata = (
-        startup_lookup.get_by_description(similar_desc)
-        if (similar_desc and startup_lookup)
+        lookup_to_use.get_by_description(similar_desc)
+        if (similar_desc and lookup_to_use)
         else None
     )
 
@@ -173,7 +218,19 @@ def rag_chain_local(
     retriever: Any,
     max_lines: int = MAX_LINES,
 ) -> str:
-    """Execute the RAG chain locally."""
+    """Execute the RAG chain locally.
+
+    This function maintains backward compatibility while using RAGService internally.
+    """
+    global _global_rag_service
+
+    # If we have a global service, use it
+    if _global_rag_service:
+        return _global_rag_service.execute_rag_chain(
+            question, generator, prompt_template, max_lines
+        )
+
+    # Fallback to original implementation for backward compatibility
     try:
         # Get relevant documents
         context_docs = retriever.invoke(question)
