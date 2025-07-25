@@ -14,14 +14,10 @@ from transformers import pipeline
 sys.path.append(str(Path(__file__).parent.parent))
 
 from config.config import DEFAULT_PROMPT_TEMPLATE, LOCAL_LANGUAGE_MODEL
-from embed_master import (
-    create_and_split_document,
-    embed,
-    rag_chain_local,
-    setup_retriever,
-)
+from src.rag_startups.core.rag_chain import rag_chain_local
 from src.rag_startups.core.startup_metadata import StartupLookup
-from src.rag_startups.embeddings.embedding import create_vectorstore
+from src.rag_startups.data.loader import create_documents, split_documents
+from src.rag_startups.embeddings.embedding import create_vectorstore, setup_retriever
 from src.rag_startups.idea_generator.generator import StartupIdeaGenerator
 from src.rag_startups.idea_generator.processors import parse_startup_examples
 
@@ -38,8 +34,9 @@ def test_create_and_split_document():
         }
     )
 
-    # Test splitting
-    splits = create_and_split_document(df)
+    # Test document creation and splitting
+    documents = create_documents(df)
+    splits = split_documents(documents)
 
     # Basic assertions
     assert splits is not None
@@ -61,7 +58,7 @@ def test_embed():
     ]
 
     # Test embedding
-    vectorstore = embed(docs, model_name="all-MiniLM-L6-v2")
+    vectorstore = create_vectorstore(docs, model_name="all-MiniLM-L6-v2")
 
     # Basic assertions
     assert vectorstore is not None
@@ -79,7 +76,7 @@ def test_setup_retriever():
         Document(page_content="Test document A about AI technology"),
         Document(page_content="Test document B about blockchain"),
     ]
-    vectorstore = embed(docs, model_name="all-MiniLM-L6-v2")
+    vectorstore = create_vectorstore(docs, model_name="all-MiniLM-L6-v2")
 
     # Test retriever setup
     retriever = setup_retriever(vectorstore)
@@ -104,7 +101,7 @@ def test_rag_chain_local():
             page_content="Company B develops blockchain technology for supply chain tracking."
         ),
     ]
-    vectorstore = embed(docs, model_name="all-MiniLM-L6-v2")
+    vectorstore = create_vectorstore(docs, model_name="all-MiniLM-L6-v2")
     retriever = setup_retriever(vectorstore)
 
     # Set up generator and prompt
@@ -174,24 +171,21 @@ def test_rag_chain_with_lookup(sample_startup_lookup):
     ]
 
     # Create vectorstore and retriever
-    vectorstore = embed(docs, model_name="all-MiniLM-L6-v2")
+    vectorstore = create_vectorstore(docs, model_name="all-MiniLM-L6-v2")
     retriever = setup_retriever(vectorstore)
 
     # Create generator and prompt
     generator = pipeline(
         "text-generation", model=LOCAL_LANGUAGE_MODEL, pad_token_id=50256
     )
-    prompt = ChatPromptTemplate.from_messages(
-        [("system", "Generate a startup idea based on: {context}")]
-    )
+    prompt_template = "Generate a startup idea based on: {context}"
 
     # Test RAG chain with lookup
     result = rag_chain_local(
         "Generate an AI startup idea",
         generator,
-        prompt,
+        prompt_template,
         retriever,
-        lookup=sample_startup_lookup,
     )
 
     assert result is not None
@@ -201,32 +195,42 @@ def test_rag_chain_with_lookup(sample_startup_lookup):
 
 def test_format_startup_idea_with_lookup(sample_startup_lookup):
     """Test formatting startup ideas with lookup."""
+    from src.rag_startups.core import rag_chain
     from src.rag_startups.core.rag_chain import format_startup_idea
 
-    # Create test documents and retriever with long_desc
-    docs = [
-        Document(
-            page_content="An AI company that does machine learning. Using cutting-edge algorithms to solve complex problems. Targeting enterprise customers."
+    # Reset global state to ensure test isolation
+    original_global_service = rag_chain._global_rag_service
+    rag_chain._global_rag_service = None
+
+    try:
+        # Create test documents and retriever with long_desc
+        docs = [
+            Document(
+                page_content="An AI company that does machine learning. Using cutting-edge algorithms to solve complex problems. Targeting enterprise customers."
+            )
+        ]
+        vectorstore = create_vectorstore(docs, model_name="all-MiniLM-L6-v2")
+        retriever = setup_retriever(vectorstore)
+
+        # Test formatting with lookup
+        result = format_startup_idea(
+            "An AI company that does machine learning. Using cutting-edge algorithms to solve complex problems. Targeting enterprise customers.",
+            retriever,
+            startup_lookup=sample_startup_lookup,
         )
-    ]
-    vectorstore = embed(docs, model_name="all-MiniLM-L6-v2")
-    retriever = setup_retriever(vectorstore)
 
-    # Test formatting with lookup
-    result = format_startup_idea(
-        "An AI company that does machine learning. Using cutting-edge algorithms to solve complex problems. Targeting enterprise customers.",
-        retriever,
-        startup_lookup=sample_startup_lookup,
-    )
+        assert result is not None
+        assert isinstance(result, dict)
+        assert "Company" in result
+        assert "Problem" in result
+        assert "Solution" in result
+        assert "Market" in result
+        assert "Value" in result
+        assert result["Company"] == "AI Company"  # Should match the lookup data
 
-    assert result is not None
-    assert isinstance(result, dict)
-    assert "Company" in result
-    assert "Problem" in result
-    assert "Solution" in result
-    assert "Market" in result
-    assert "Value" in result
-    assert result["Company"] == "AI Company"  # Should match the lookup data
+    finally:
+        # Restore original global state
+        rag_chain._global_rag_service = original_global_service
 
 
 def test_text_only_embeddings():
@@ -269,16 +273,12 @@ Unique Value:
 """
         )
 
-        # Create prompt from template
-        prompt = ChatPromptTemplate.from_template(DEFAULT_PROMPT_TEMPLATE)
-
         # Get RAG output
         rag_output = rag_chain_local(
-            question="AI startups",
-            generator=generator,
-            prompt=prompt,
-            retriever=retriever,
-            num_ideas=1,  # Just one idea for testing
+            "AI startups",
+            generator,
+            DEFAULT_PROMPT_TEMPLATE,
+            retriever,
         )
         assert rag_output is not None
 
