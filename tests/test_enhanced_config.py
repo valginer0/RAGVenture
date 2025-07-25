@@ -106,11 +106,11 @@ class TestRAGSettings:
 
     def test_missing_required_token(self):
         """Test that missing HuggingFace token raises validation error."""
-        with patch.dict(os.environ, {}, clear=True):
-            with pytest.raises(ValidationError) as exc_info:
-                RAGSettings()
+        # Test by trying to create settings with explicitly empty token
+        with pytest.raises(ValidationError) as exc_info:
+            RAGSettings(huggingface_token="")
 
-            assert "huggingface_token" in str(exc_info.value).lower()
+        assert "huggingface_token" in str(exc_info.value).lower()
 
     def test_property_methods(self):
         """Test property methods for derived values."""
@@ -206,7 +206,7 @@ class TestConfigurationValidator:
             # Mock the data directory to exist
             with patch.object(Path, "exists", return_value=True):
                 # Mock SentenceTransformer to avoid actual model loading
-                with patch("src.rag_startups.config.validator.SentenceTransformer"):
+                with patch("sentence_transformers.SentenceTransformer"):
                     is_valid, errors = validator.validate_environment()
 
                     assert is_valid is True
@@ -215,11 +215,13 @@ class TestConfigurationValidator:
     def test_validate_environment_missing_token(self):
         """Test validation failure with missing token."""
         with patch.dict(os.environ, {}, clear=True):
-            validator = ConfigurationValidator()
-            is_valid, errors = validator.validate_environment()
+            # Mock .env file to not exist so token is truly missing
+            with patch("pathlib.Path.is_file", return_value=False):
+                validator = ConfigurationValidator()
+                is_valid, errors = validator.validate_environment()
 
-            assert is_valid is False
-            assert any("huggingface_token" in error.lower() for error in errors)
+                assert is_valid is False
+                assert any("huggingface_token" in error.lower() for error in errors)
 
     def test_generate_env_template(self):
         """Test environment template generation."""

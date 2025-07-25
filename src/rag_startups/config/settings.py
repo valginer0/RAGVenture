@@ -47,6 +47,7 @@ class RAGSettings(BaseSettings):
     huggingface_token: str = Field(
         ...,
         validation_alias=AliasChoices("huggingface_token", "HUGGINGFACE_TOKEN"),
+        min_length=1,
         description="HuggingFace API token (required)",
     )
 
@@ -72,23 +73,31 @@ class RAGSettings(BaseSettings):
     # Text Processing
     chunk_size: int = Field(
         default=1000,
+        validation_alias=AliasChoices("chunk_size", "RAG_CHUNK_SIZE"),
         ge=100,
         le=4000,
         description="Text chunk size for document splitting",
     )
 
     chunk_overlap: int = Field(
-        default=200, ge=0, le=1000, description="Overlap between text chunks"
+        default=200,
+        validation_alias=AliasChoices("chunk_overlap", "RAG_CHUNK_OVERLAP"),
+        ge=0,
+        le=1000,
+        description="Overlap between text chunks",
     )
 
     max_lines: int = Field(
-        default=500_000, ge=1000, description="Maximum lines to process from data files"
+        default=500_000,
+        validation_alias=AliasChoices("max_lines", "RAG_MAX_LINES"),
+        ge=1000,
+        description="Maximum lines to process from data files",
     )
 
     # Retriever Configuration
     retriever_top_k: int = Field(
         default=4,
-        env="RAG_RETRIEVER_TOP_K",
+        validation_alias=AliasChoices("retriever_top_k", "RAG_RETRIEVER_TOP_K"),
         ge=1,
         le=20,
         description="Number of documents to retrieve",
@@ -115,7 +124,11 @@ class RAGSettings(BaseSettings):
     cache_ttl: int = Field(default=3600, ge=60, description="Cache TTL in seconds")
 
     # Logging
-    log_level: LogLevel = Field(default=LogLevel.INFO, description="Logging level")
+    log_level: LogLevel = Field(
+        default=LogLevel.INFO,
+        validation_alias=AliasChoices("log_level", "RAG_LOG_LEVEL"),
+        description="Logging level",
+    )
 
     log_file: Optional[Path] = Field(
         default=None, description="Log file path (optional)"
@@ -123,19 +136,27 @@ class RAGSettings(BaseSettings):
 
     # LangSmith Integration
     langchain_tracing: bool = Field(
-        default=False, description="Enable LangChain tracing"
+        default=False,
+        validation_alias=AliasChoices("langchain_tracing", "LANGCHAIN_TRACING_V2"),
+        description="Enable LangChain tracing",
     )
 
     langchain_endpoint: str = Field(
-        default="https://api.smith.langchain.com", description="LangChain API endpoint"
+        default="https://api.smith.langchain.com",
+        validation_alias=AliasChoices("langchain_endpoint", "LANGCHAIN_ENDPOINT"),
+        description="LangChain API endpoint",
     )
 
     langchain_api_key: Optional[str] = Field(
-        default=None, description="LangChain API key"
+        default=None,
+        validation_alias=AliasChoices("langchain_api_key", "LANGCHAIN_API_KEY"),
+        description="LangChain API key",
     )
 
     langchain_project: str = Field(
-        default="rag_startups", description="LangChain project name"
+        default="rag_startups",
+        validation_alias=AliasChoices("langchain_project", "LANGCHAIN_PROJECT"),
+        description="LangChain project name",
     )
 
     # Database Configuration
