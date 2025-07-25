@@ -236,7 +236,7 @@ Context examples:
 Return the most relevant examples."""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=Path(__file__).parent.parent.parent.parent / ".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
         validate_assignment=True,
