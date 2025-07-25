@@ -1,15 +1,22 @@
 """Command-line interface for startup idea generation."""
 
+import json
 import os
+import time
+from pathlib import Path
 from typing import Optional
 
 import typer
+from rich import print as rprint
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
 from embed_master import calculate_result, initialize_embeddings
 
+from .cli_models import app as models_app
+from .config.settings import get_settings
+from .core.rag_chain import format_startup_idea, initialize_rag, rag_chain_local
 from .core.startup_metadata import StartupLookup
 from .data.loader import load_data
 from .idea_generator.generator import StartupIdeaGenerator
@@ -23,6 +30,9 @@ app = typer.Typer(
     add_completion=False,
 )
 console = Console()
+
+# Add model management subcommand
+app.add_typer(models_app, name="models")
 
 
 def validate_token() -> str:

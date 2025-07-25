@@ -61,13 +61,40 @@ class RAGSettings(BaseSettings):
     embedding_model: str = Field(
         default="all-MiniLM-L6-v2",
         validation_alias=AliasChoices("embedding_model", "RAG_EMBEDDING_MODEL"),
-        description="Default embedding model",
+        description="Default embedding model (fallback if smart selection fails)",
     )
 
     language_model: str = Field(
         default="gpt2",
         validation_alias=AliasChoices("language_model", "RAG_LANGUAGE_MODEL"),
-        description="Local language model for text generation",
+        description="Default language model (fallback if smart selection fails)",
+    )
+
+    # Smart Model Management
+    enable_smart_model_selection: bool = Field(
+        default=True,
+        validation_alias=AliasChoices(
+            "enable_smart_model_selection", "RAG_SMART_MODELS"
+        ),
+        description="Enable automatic model selection with fallback hierarchy",
+    )
+
+    model_health_check_interval: int = Field(
+        default=3600,
+        validation_alias=AliasChoices(
+            "model_health_check_interval", "RAG_MODEL_CHECK_INTERVAL"
+        ),
+        ge=300,
+        le=86400,
+        description="Model health check interval in seconds (5min-24h)",
+    )
+
+    model_timeout: int = Field(
+        default=10,
+        validation_alias=AliasChoices("model_timeout", "RAG_MODEL_TIMEOUT"),
+        ge=5,
+        le=60,
+        description="Model availability check timeout in seconds",
     )
 
     # Text Processing
