@@ -182,7 +182,8 @@ def test(
             hf_client = model_service.create_huggingface_client(language_model)
 
             test_prompt = "Generate a brief startup idea:"
-            params = model_service.get_model_parameters(language_model)
+            # Get model parameters but use simplified test parameters
+            model_service.get_model_parameters(language_model)
 
             # Limit parameters for test
             test_params = {"max_new_tokens": 50, "temperature": 0.7, "do_sample": True}
@@ -256,7 +257,7 @@ def add(
         health_info = model_service.check_model_health(name)
 
         if health_info["healthy"]:
-            console.print(f"✅ Model is healthy and ready to use", style="green")
+            console.print("✅ Model is healthy and ready to use", style="green")
         else:
             console.print(
                 f"⚠️  Model added but appears unhealthy: {health_info['status']}",

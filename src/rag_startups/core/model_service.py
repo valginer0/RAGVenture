@@ -201,8 +201,8 @@ class ModelService:
         self._current_embedding_model = None
 
         # Get fresh models (this will trigger health checks)
-        language_model = self.get_language_model(force_check=True)
-        embedding_model = self.get_embedding_model(force_check=True)
+        self.get_language_model(force_check=True)
+        self.get_embedding_model(force_check=True)
 
         return self.check_model_health()
 

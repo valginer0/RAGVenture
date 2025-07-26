@@ -195,7 +195,6 @@ class ConfigurationMigrator:
 
             try:
                 content = py_file.read_text()
-                original_content = content
                 changes = 0
 
                 # Replace import patterns
@@ -263,7 +262,7 @@ class ConfigurationMigrator:
                     task2 = progress.add_task(
                         "Backing up old configuration...", total=None
                     )
-                    backup_dir = self.backup_old_config()
+                    self.backup_old_config()
                     progress.update(task2, description="✓ Old configuration backed up")
 
                 # Step 3: Generate migration .env file

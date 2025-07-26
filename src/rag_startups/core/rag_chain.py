@@ -65,8 +65,6 @@ def get_similar_description(description: str, retriever: Any) -> Optional[str]:
 
     This function maintains backward compatibility while delegating to RAGService.
     """
-    global _global_rag_service
-
     # If we have a global service, use it
     if _global_rag_service:
         return _global_rag_service.get_similar_description(description)
@@ -88,8 +86,6 @@ def format_startup_idea(
 
     This function maintains backward compatibility while using RAGService internally.
     """
-    global _global_rag_service
-
     # If we have a global service, use it
     if _global_rag_service:
         return _global_rag_service.format_startup_idea(description)
@@ -224,8 +220,6 @@ def rag_chain_local(
 
     This function maintains backward compatibility while using RAGService internally.
     """
-    global _global_rag_service
-
     # If we have a global service, use it
     if _global_rag_service:
         return _global_rag_service.execute_rag_chain(

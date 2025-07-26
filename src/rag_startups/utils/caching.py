@@ -93,7 +93,7 @@ def cache_result(
             nonlocal last_redis_host
 
             # Check Redis connection and clear local cache if host changed
-            global _redis_enabled, _redis_client, _redis_host
+            global _redis_enabled, _redis_client
             _redis_client = get_redis_client()
 
             if _redis_host != last_redis_host:

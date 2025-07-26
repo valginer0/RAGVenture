@@ -47,7 +47,7 @@ def main():
     print("\n2. 🔍 Testing startup lookup initialization...")
     lookup_start = time.time()
     try:
-        lookup = StartupLookup(json_data)
+        StartupLookup(json_data)
         lookup_time = time.time() - lookup_start
         print(f"   ✅ Initialized lookup in {lookup_time:.2f}s")
         print(f"   📊 Indexed {len(json_data)} startup records")
