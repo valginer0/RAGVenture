@@ -16,6 +16,8 @@ from embed_master import calculate_result, initialize_embeddings
 
 from .cli_models import app as models_app
 from .config.settings import get_settings
+from .core.model_manager import ModelType
+from .core.model_service import ModelService
 from .core.rag_chain import format_startup_idea, initialize_rag, rag_chain_local
 from .core.startup_metadata import StartupLookup
 from .data.loader import load_data
@@ -132,6 +134,14 @@ def generate_all(
     # Validate token
     token = validate_token()
 
+    # Initialize smart model management
+    settings = get_settings()
+    model_service = ModelService(settings)
+
+    # Get the best available language model
+    language_model = model_service.get_language_model()
+    console.print(f"[blue]Using model:[/blue] {language_model.name}", style="dim")
+
     question = (
         f"Find innovative startup ideas in {topic}"
         if " " in topic  # If it's a compound phrase like "education technology"
@@ -163,7 +173,8 @@ def generate_all(
         )
         example_startups_parsed = parse_ideas(example_startups)
 
-        generator = StartupIdeaGenerator(token=token)
+        # Use smart model management instead of hardcoded model
+        generator = StartupIdeaGenerator(model_name=language_model.name, token=token)
         response, insights = generator.generate(
             num_ideas=num_ideas,
             example_startups=example_startups_parsed,

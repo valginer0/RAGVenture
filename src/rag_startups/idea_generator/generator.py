@@ -29,21 +29,32 @@ class StartupIdeaGenerator:
 
     def __init__(
         self,
-        model_name: str = "mistralai/Mistral-7B-Instruct-v0.2",
+        model_name: str = "mistralai/Mistral-7B-Instruct-v0.3",
         max_requests_per_hour: int = 120,  # Conservative default
         token: Optional[str] = None,
+        use_local: bool = None,  # Auto-detect based on model name
     ):
         self.model_name = model_name
         self.max_requests_per_hour = max_requests_per_hour
         self.token = token or os.getenv("HUGGINGFACE_TOKEN")
-        if not self.token:
-            raise ValueError("HuggingFace token not provided")
+
+        # Auto-detect if this is a local model
+        self.use_local = (
+            use_local if use_local is not None else model_name.startswith("local-")
+        )
+
+        if not self.use_local and not self.token:
+            raise ValueError("HuggingFace token not provided for remote model")
 
         # Rate limiting state
         self.request_timestamps: List[datetime] = []
 
-        # Initialize clients
-        self.client = InferenceClient(token=self.token)
+        # Initialize client based on model type
+        if self.use_local:
+            self.client = None  # Will use local transformers
+            self._local_model = None
+        else:
+            self.client = InferenceClient(model=self.model_name, token=self.token)
         self.market_analyzer = MarketAnalyzer()
 
     def _check_rate_limit(self) -> bool:
