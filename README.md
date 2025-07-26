@@ -12,11 +12,13 @@ RAGVenture is an intelligent startup idea generator powered by Retrieval-Augment
 ## Why RAGVenture?
 
 Traditional startup ideation tools either rely on expensive API calls or generate ideas without real-world context. RAGVenture solves this by:
-- Data-Driven: Learns from real startup data to ground suggestions in reality
-- Context-Aware: Understands patterns from successful startups
-- Intelligent: Uses RAG to combine LLM capabilities with precise information retrieval
-- Fast & Local: Runs entirely on your machine with no API costs (except optional Hugging Face)
-- Production-Ready: Comprehensive test suite, error handling, and monitoring
+- **Completely FREE**: Runs entirely on your machine with no API costs - zero API keys required!
+- **Smart Model Management**: Automatically handles model deprecation and failures with intelligent fallback
+- **Data-Driven**: Learns from real startup data to ground suggestions in reality
+- **Context-Aware**: Understands patterns from successful startups
+- **Intelligent**: Uses RAG to combine LLM capabilities with precise information retrieval
+- **Resilient**: Works offline with local models when external APIs are unavailable
+- **Production-Ready**: 157 tests (63% coverage), comprehensive error handling, and monitoring
 
 ## System Requirements
 
@@ -52,12 +54,17 @@ pip install -r requirements.txt
 python -m spacy download en_core_web_sm
 ```
 
-2. **Environment Setup**:
+2. **Environment Setup** (Optional - system works completely FREE without any setup!):
 ```bash
-# Required for text generation
+# Optional: HuggingFace token for enhanced remote models (system works completely FREE without it)
 export HUGGINGFACE_TOKEN="your-token-here"  # Get from huggingface.co
 
-# Optional for LangChain tracing (debugging)
+# Smart model management (enabled by default)
+export RAG_SMART_MODELS=true
+export RAG_MODEL_CHECK_INTERVAL=3600
+export RAG_MODEL_TIMEOUT=60
+
+# Optional: LangChain tracing (debugging)
 export LANGCHAIN_TRACING_V2=true
 export LANGCHAIN_ENDPOINT="https://api.smith.langchain.com"
 export LANGCHAIN_API_KEY="your-langsmith-api-key"
@@ -67,13 +74,16 @@ export LANGCHAIN_PROJECT="your-project-name"
 3. **Generate Ideas**:
 ```bash
 # Generate 3 startup ideas in the AI domain
-python -m src.rag_startups.cli generate-all "AI" --num-ideas 3
+python -m rag_startups.cli generate-all "AI" --num-ideas 3
 
 # Generate ideas without market analysis
-python -m src.rag_startups.cli generate-all "fintech" --num-ideas 2 --no-market
+python -m rag_startups.cli generate-all "fintech" --num-ideas 2 --no-market
+
+# Check model health and status
+python -m rag_startups.cli models status
 
 # Use custom startup data file
-python -m src.rag_startups.cli generate-all "education" --file custom_startups.json
+python -m rag_startups.cli generate-all "education" --file custom_startups.json
 ```
 
 ## Features & Capabilities
@@ -94,6 +104,13 @@ Commands:
     - `--market/--no-market`: Include/exclude market analysis
     - `--temperature`: Model creativity (0.0-1.0)
     - `--print-examples`: Show relevant examples
+
+### Smart Model Management
+- **Automatic Fallback**: Falls back to local models when external APIs fail
+- **Model Migration Intelligence**: Handles model deprecation (e.g., Mistral v0.2→v0.3) automatically
+- **Health Monitoring**: Continuous model health checks and status reporting
+- **Local Resilience**: Works completely offline with local models
+- **CLI Management**: `models` command for status, testing, and diagnostics
 
 ### Technical Features
 - Smart Analysis:

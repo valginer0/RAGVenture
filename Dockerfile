@@ -32,5 +32,12 @@ RUN pip install --no-cache-dir spacy && \
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 
-# Create directory for logs
-RUN mkdir -p /app/logs && chmod 777 /app/logs
+# Create directories for logs and model cache
+RUN mkdir -p /app/logs && chmod 777 /app/logs && \
+    mkdir -p /app/.cache/models && chmod 777 /app/.cache/models && \
+    mkdir -p /root/.cache/huggingface && chmod 777 /root/.cache/huggingface
+
+# Set smart model management defaults
+ENV RAG_SMART_MODELS=true
+ENV RAG_MODEL_CHECK_INTERVAL=3600
+ENV RAG_MODEL_TIMEOUT=60

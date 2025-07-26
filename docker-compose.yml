@@ -5,13 +5,17 @@ services:
       - .:/app
       - model-cache:/root/.cache/torch/sentence_transformers  # Cache for sentence transformers
       - huggingface-cache:/root/.cache/huggingface  # Cache for HuggingFace models
+      - smart-model-cache:/app/.cache/models  # Cache for smart model management
     env_file:
       - .env
     environment:
       - PYTHONPATH=/app
+      - RAG_SMART_MODELS=true
+      - RAG_MODEL_CHECK_INTERVAL=3600
+      - RAG_MODEL_TIMEOUT=60
     ports:
       - "8000:8000"  # If we add a web interface later
-    command: python -m src.rag_startups.cli generate-all --num-ideas 3 "fintech"
+    command: python -m rag_startups.cli generate-all --num-ideas 3 "fintech"
 
   app-gpu:
     build:
@@ -21,13 +25,17 @@ services:
       - .:/app
       - model-cache:/root/.cache/torch/sentence_transformers  # Cache for sentence transformers
       - huggingface-cache:/root/.cache/huggingface  # Cache for HuggingFace models
+      - smart-model-cache:/app/.cache/models  # Cache for smart model management
     env_file:
       - .env
     environment:
       - PYTHONPATH=/app
+      - RAG_SMART_MODELS=true
+      - RAG_MODEL_CHECK_INTERVAL=3600
+      - RAG_MODEL_TIMEOUT=60
     ports:
       - "8001:8000"
-    command: python -m src.rag_startups.cli generate-all --num-ideas 3 "fintech"
+    command: python -m rag_startups.cli generate-all --num-ideas 3 "fintech"
 
   # Test service for GPU code without actual GPU
   app-gpu-test:
@@ -38,14 +46,36 @@ services:
       - .:/app
       - model-cache:/root/.cache/torch/sentence_transformers  # Cache for sentence transformers
       - huggingface-cache:/root/.cache/huggingface  # Cache for HuggingFace models
+      - smart-model-cache:/app/.cache/models  # Cache for smart model management
     env_file:
       - .env
     environment:
       - PYTHONPATH=/app
+      - RAG_SMART_MODELS=true
+      - RAG_MODEL_CHECK_INTERVAL=3600
+      - RAG_MODEL_TIMEOUT=60
     ports:
       - "8002:8000"
-    command: python -m src.rag_startups.cli generate-all --num-ideas 3 "fintech"
+    command: python -m rag_startups.cli generate-all --num-ideas 3 "fintech"
+
+  # Model management service for health checks and diagnostics
+  model-manager:
+    build: .
+    volumes:
+      - .:/app
+      - model-cache:/root/.cache/torch/sentence_transformers
+      - huggingface-cache:/root/.cache/huggingface
+      - smart-model-cache:/app/.cache/models
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+      - RAG_SMART_MODELS=true
+      - RAG_MODEL_CHECK_INTERVAL=3600
+      - RAG_MODEL_TIMEOUT=60
+    command: python -m rag_startups.cli models status
 
 volumes:
   model-cache:  # Persistent volume for sentence transformers cache
-  huggingface-cache:  # Persistent volume for HuggingFace models
+  huggingface-cache:  # Persistent volume for HuggingFace models cache
+  smart-model-cache:  # Persistent volume for smart model management cache

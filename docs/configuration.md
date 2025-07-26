@@ -1,16 +1,37 @@
 # RAGVenture Configuration Guide
 
-This guide explains how to configure RAGVenture for optimal performance.
+This guide explains how to configure RAGVenture for optimal performance with the new smart model management system.
+
+## Smart Model Management
+
+RAGVenture now includes intelligent model management that automatically handles model failures, deprecation, and provides local fallback options.
+
+### Key Features
+- **Automatic Fallback**: Falls back to local models when external APIs fail
+- **Model Migration**: Handles model version updates automatically (e.g., Mistral v0.2→v0.3)
+- **Health Monitoring**: Continuous model health checks
+- **Local Resilience**: Works completely offline
 
 ## Environment Variables
 
-RAGVenture is designed to run completely free, with no API keys required! However, you can optionally use environment variables for custom configurations.
+RAGVenture is designed to run completely FREE, with no API keys required! The system works entirely offline with local models by default. All configuration is optional for enhanced features.
 
 Create a `.env` file in your project root to configure RAGVenture:
 
 ```bash
-# Required for text generation
-HUGGINGFACE_TOKEN="your-token-here"  # Get from huggingface.co
+# Optional: Add your HuggingFace token for enhanced remote models
+# (system works completely FREE without it)
+# HUGGINGFACE_TOKEN=your_actual_token_here
+
+# Smart Model Management (enabled by default)
+RAG_SMART_MODELS=true                    # Enable intelligent model selection
+RAG_MODEL_CHECK_INTERVAL=3600            # Health check interval (seconds)
+RAG_MODEL_TIMEOUT=60                     # Model response timeout (seconds)
+
+# Language Model Configuration (uses smart model management)
+RAG_LANGUAGE_MODEL="mistralai/Mistral-7B-Instruct-v0.3"  # Preferred language model
+RAG_EMBEDDING_MODEL="all-MiniLM-L6-v2"                   # Default embedding model
+RAG_MODEL_TEMPERATURE=0.7                                # Model creativity (0.0-1.0)
 
 # Optional: LangChain tracking (for debugging)
 LANGCHAIN_TRACING_V2=true
@@ -22,32 +43,39 @@ LANGCHAIN_PROJECT="your-project-name"
 MARKET_DATA_SOURCES="gartner,idc,crunchbase"
 MARKET_ANALYSIS_REGION="north_america"
 MARKET_CONFIDENCE_THRESHOLD="0.8"
-
-# Optional: Model configuration
-MODEL_TEMPERATURE="0.7"  # Controls creativity (0.0-1.0)
-MODEL_MAX_LENGTH="1024"  # Maximum output length
-MODEL_TOP_P="0.9"       # Nucleus sampling parameter
 ```
 
 ## Model Configuration
 
-RAGVenture uses completely free, locally-running models by default:
+RAGVenture uses smart model management with automatic fallback:
 
-### Text Generation Models
+### Smart Model Selection
 
-By default, RAGVenture uses GPT-2 which:
-- Runs completely locally
-- Requires no API key
-- Has no usage costs
-- Provides good performance for idea generation
+The system automatically selects the best available model:
+1. **Remote Models**: Mistral-7B-Instruct-v0.3 (if HuggingFace token available)
+2. **Local Fallback**: GPT-2 and other local models
+3. **Migration Intelligence**: Automatically handles model deprecation
 
-You can configure the model behavior:
+### Model Management CLI
+
+```bash
+# Check model health and status
+python -m rag_startups.cli models status
+
+# List available models with priorities
+python -m rag_startups.cli models list
+
+# Test specific models
+python -m rag_startups.cli models test mistralai/Mistral-7B-Instruct-v0.3
+```
+
+### Programmatic Configuration
 
 ```python
-from rag_startups.config import ModelConfig
+from rag_startups.config.settings import Settings
 
-# Default configuration
-config = ModelConfig(
+# Load configuration with smart model management
+settings = Settings(
     model_name="gpt2",      # Free, locally-running model
     temperature=0.7,        # Higher = more creative, Lower = more focused
     max_length=1024,        # Maximum token length for generation
@@ -172,31 +200,35 @@ configure_logging(
 
 ## Docker Configuration
 
-When running in Docker, first make sure your `.env` file contains all necessary variables:
+RAGVenture works completely FREE in Docker with no configuration required! For enhanced features, create a `.env` file:
 
 ```bash
-# Required
-HUGGINGFACE_TOKEN="your-token-here"
+# Optional: Add your tokens for enhanced features (system works FREE without them)
+# HUGGINGFACE_TOKEN=your_actual_token_here
+# BLS_API_KEY=your_bls_key_here
 
-# Optional
-MODEL_TEMPERATURE=0.7
-USE_GPU=true
-MARKET_DATA_SOURCES=gartner,idc
-CACHE_SIZE_MB=512
+# Smart Model Management (enabled by default in Docker)
+RAG_SMART_MODELS=true
+RAG_MODEL_CHECK_INTERVAL=3600
+RAG_MODEL_TIMEOUT=60
+
+# Optional: Model preferences
+RAG_MODEL_TEMPERATURE=0.7
+RAG_LANGUAGE_MODEL=mistralai/Mistral-7B-Instruct-v0.3
 ```
 
-Then reference these variables in your docker-compose.yml:
+The docker-compose.yml automatically references these variables:
 
 ```yaml
 environment:
-  # Required: Reference token from .env file
-  - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
+  # Smart model management (enabled by default)
+  - RAG_SMART_MODELS=${RAG_SMART_MODELS:-true}
+  - RAG_MODEL_CHECK_INTERVAL=${RAG_MODEL_CHECK_INTERVAL:-3600}
+  - RAG_MODEL_TIMEOUT=${RAG_MODEL_TIMEOUT:-60}
 
-  # Optional: Reference other settings from .env
-  - MODEL_TEMPERATURE=${MODEL_TEMPERATURE:-0.7}  # Default if not set
-  - USE_GPU=${USE_GPU:-true}
-  - MARKET_DATA_SOURCES=${MARKET_DATA_SOURCES:-gartner,idc}
-  - CACHE_SIZE_MB=${CACHE_SIZE_MB:-512}
+  # Optional: Enhanced features (system works FREE without these)
+  - HUGGINGFACE_TOKEN=${HUGGINGFACE_TOKEN}
+  - RAG_MODEL_TEMPERATURE=${RAG_MODEL_TEMPERATURE:-0.7}
 ```
 
 This way, all sensitive information like API tokens stays in your `.env` file (which should be in .gitignore), while docker-compose.yml can be safely committed to version control.
