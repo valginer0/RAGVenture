@@ -5,16 +5,34 @@ Current baseline: ~34s cold start for idea generation.
 """
 
 import os
+import time
 from unittest.mock import patch
 
 import pytest  # noqa: F401
 
 from rag_startups.config.settings import RAGSettings
 
+# Detect CI environment
+IS_CI = (
+    os.getenv("CI", "false").lower() == "true"
+    or os.getenv("GITHUB_ACTIONS", "false").lower() == "true"
+)
+
+
+def simple_timer(func):
+    """Simple timing function for CI environments where pytest-benchmark might fail."""
+    start_time = time.time()
+    result = func()
+    end_time = time.time()
+    duration = end_time - start_time
+    print(f"Function {func.__name__} took {duration:.4f} seconds")
+    return result
+
 
 class TestPerformanceBaselines:
     """Performance regression tests with established baselines."""
 
+    @pytest.mark.benchmark(group="config")
     def test_config_loading_performance(self, benchmark):
         """Config loading should be fast."""
 
@@ -24,11 +42,18 @@ class TestPerformanceBaselines:
             ):
                 return RAGSettings()
 
-        result = benchmark(load_config)
+        if IS_CI:
+            # Use simple timer in CI environments
+            result = simple_timer(load_config)
+        else:
+            # Use pytest-benchmark in local development
+            result = benchmark(load_config)
+
         assert result is not None
 
         # Config loading should be under 10ms (benchmark runs automatically)
 
+    @pytest.mark.benchmark(group="imports")
     def test_import_performance(self, benchmark):
         """Module imports should be fast."""
 
@@ -38,7 +63,13 @@ class TestPerformanceBaselines:
 
             return True
 
-        result = benchmark(import_modules)
+        if IS_CI:
+            # Use simple timer in CI environments
+            result = simple_timer(import_modules)
+        else:
+            # Use pytest-benchmark in local development
+            result = benchmark(import_modules)
+
         assert result is True
 
         # Imports should be fast (benchmark runs automatically)
@@ -47,6 +78,7 @@ class TestPerformanceBaselines:
 class TestPerformanceRegression:
     """Tests to catch performance regressions in key operations."""
 
+    @pytest.mark.benchmark(group="validation")
     def test_config_validation_performance(self, benchmark):
         """Config validation should remain fast even with complex settings."""
 
@@ -62,11 +94,18 @@ class TestPerformanceRegression:
                     model_timeout=30,
                 )
 
-        result = benchmark(validate_complex_config)
+        if IS_CI:
+            # Use simple timer in CI environments
+            result = simple_timer(validate_complex_config)
+        else:
+            # Use pytest-benchmark in local development
+            result = benchmark(validate_complex_config)
+
         assert result is not None
 
         # Complex validation should still be fast (benchmark runs automatically)
 
+    @pytest.mark.benchmark(group="access")
     def test_repeated_config_access_performance(self, benchmark):
         """Repeated config access should be optimized."""
         with patch.dict(os.environ, {"HUGGINGFACE_TOKEN": "test-token"}, clear=True):
@@ -80,7 +119,13 @@ class TestPerformanceRegression:
                     _ = settings.max_workers
                 return True
 
-            result = benchmark(access_config_repeatedly)
+            if IS_CI:
+                # Use simple timer in CI environments
+                result = simple_timer(access_config_repeatedly)
+            else:
+                # Use pytest-benchmark in local development
+                result = benchmark(access_config_repeatedly)
+
             assert result is True
 
             # Repeated access should be very fast (benchmark runs automatically)
@@ -97,8 +142,12 @@ def pytest_configure(config):
 # Benchmark configuration
 def pytest_benchmark_update_json(config, benchmarks, output_json):
     """Update benchmark JSON with additional metadata."""
+    import platform
+    import sys
+
     output_json["environment"] = {
-        "python_version": f"{config.getoption('--tb')}",
+        "python_version": f"{sys.version_info.major}.{sys.version_info.minor}",
+        "platform": platform.system().lower(),
         "test_type": "performance_regression",
         "baseline_version": "1.0.0",
     }
