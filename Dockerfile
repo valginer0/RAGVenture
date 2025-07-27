@@ -17,11 +17,17 @@ RUN apt-get update && apt-get install -y \
 # Copy the entire project
 COPY . .
 
-# Install Python dependencies - force CPU versions
-RUN pip install --no-cache-dir \
-    torch==2.1.0+cpu \
-    torchvision==0.16.0+cpu \
-    -f https://download.pytorch.org/whl/torch_stable.html && \
+# Install Python dependencies - conditional PyTorch installation for multi-arch support
+RUN if [ "$(uname -m)" = "x86_64" ]; then \
+        pip install --no-cache-dir \
+            torch==2.1.0+cpu \
+            torchvision==0.16.0+cpu \
+            -f https://download.pytorch.org/whl/torch_stable.html; \
+    else \
+        pip install --no-cache-dir \
+            torch==2.1.0 \
+            torchvision==0.16.0; \
+    fi && \
     pip install --no-cache-dir -r requirements.txt
 
 # Install and download spaCy model
