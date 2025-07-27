@@ -1,0 +1,12 @@
+Collecting pytest-benchmark
+  Downloading pytest_benchmark-5.1.0-py3-none-any.whl.metadata (25 kB)
+Requirement already satisfied: pytest>=8.1 in ./.venv/lib/python3.11/site-packages (from pytest-benchmark) (8.3.4)
+Collecting py-cpuinfo (from pytest-benchmark)
+  Downloading py_cpuinfo-9.0.0-py3-none-any.whl.metadata (794 bytes)
+Requirement already satisfied: iniconfig in ./.venv/lib/python3.11/site-packages (from pytest>=8.1->pytest-benchmark) (2.0.0)
+Requirement already satisfied: packaging in ./.venv/lib/python3.11/site-packages (from pytest>=8.1->pytest-benchmark) (24.2)
+Requirement already satisfied: pluggy<2,>=1.5 in ./.venv/lib/python3.11/site-packages (from pytest>=8.1->pytest-benchmark) (1.5.0)
+Downloading pytest_benchmark-5.1.0-py3-none-any.whl (44 kB)
+Downloading py_cpuinfo-9.0.0-py3-none-any.whl (22 kB)
+Installing collected packages: py-cpuinfo, pytest-benchmark
+Successfully installed py-cpuinfo-9.0.0 pytest-benchmark-5.1.0
