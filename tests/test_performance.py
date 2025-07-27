@@ -4,6 +4,9 @@ These tests establish performance baselines and prevent regressions.
 Current baseline: ~34s cold start for idea generation.
 """
 
+import os
+from unittest.mock import patch
+
 import pytest  # noqa: F401
 
 from rag_startups.config.settings import RAGSettings
@@ -16,12 +19,15 @@ class TestPerformanceBaselines:
         """Config loading should be fast."""
 
         def load_config():
-            return RAGSettings()
+            with patch.dict(
+                os.environ, {"HUGGINGFACE_TOKEN": "test-token"}, clear=True
+            ):
+                return RAGSettings()
 
         result = benchmark(load_config)
-
-        # Config loading should be very fast (benchmark runs automatically)
         assert result is not None
+
+        # Config loading should be under 10ms (benchmark runs automatically)
 
     def test_import_performance(self, benchmark):
         """Module imports should be fast."""
@@ -45,13 +51,16 @@ class TestPerformanceRegression:
         """Config validation should remain fast even with complex settings."""
 
         def validate_complex_config():
-            return RAGSettings(
-                chunk_size=2000,
-                chunk_overlap=400,
-                max_workers=8,
-                batch_size=64,
-                model_timeout=30,
-            )
+            with patch.dict(
+                os.environ, {"HUGGINGFACE_TOKEN": "test-token"}, clear=True
+            ):
+                return RAGSettings(
+                    chunk_size=2000,
+                    chunk_overlap=400,
+                    max_workers=8,
+                    batch_size=64,
+                    model_timeout=30,
+                )
 
         result = benchmark(validate_complex_config)
         assert result is not None
@@ -60,20 +69,21 @@ class TestPerformanceRegression:
 
     def test_repeated_config_access_performance(self, benchmark):
         """Repeated config access should be optimized."""
-        settings = RAGSettings()
+        with patch.dict(os.environ, {"HUGGINGFACE_TOKEN": "test-token"}, clear=True):
+            settings = RAGSettings()
 
-        def access_config_repeatedly():
-            # Simulate repeated access patterns
-            for _ in range(100):
-                _ = settings.chunk_size
-                _ = settings.model_timeout
-                _ = settings.max_workers
-            return True
+            def access_config_repeatedly():
+                # Simulate repeated access patterns
+                for _ in range(100):
+                    _ = settings.chunk_size
+                    _ = settings.model_timeout
+                    _ = settings.max_workers
+                return True
 
-        result = benchmark(access_config_repeatedly)
-        assert result is True
+            result = benchmark(access_config_repeatedly)
+            assert result is True
 
-        # Repeated access should be very fast (benchmark runs automatically)
+            # Repeated access should be very fast (benchmark runs automatically)
 
 
 # Pytest configuration for performance tests
