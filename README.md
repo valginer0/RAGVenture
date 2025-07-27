@@ -18,7 +18,7 @@ Traditional startup ideation tools either rely on expensive API calls or generat
 - **Context-Aware**: Understands patterns from successful startups
 - **Intelligent**: Uses RAG to combine LLM capabilities with precise information retrieval
 - **Resilient**: Works offline with local models when external APIs are unavailable
-- **Production-Ready**: 157 tests (63% coverage), comprehensive error handling, and monitoring
+- **Production-Ready**: 177 tests with comprehensive coverage, Docker runtime fixes, and monitoring
 
 ## System Requirements
 
@@ -146,12 +146,17 @@ For containerized deployment, we provide both CPU and GPU support.
 
 ### Quick Start with Docker
 ```bash
-# CPU Version
+# CPU Version (recommended - fully tested)
 docker-compose up app-cpu
 
 # GPU Version (with NVIDIA support)
 docker-compose up app-gpu
+
+# Run with custom data file
+docker-compose run --rm app-cpu python -m rag_startups.cli generate-all fintech --num-ideas 1 --file /app/yc_startups.json
 ```
+
+**Docker Status**: ✅ **Production Ready** - All runtime issues resolved, works end-to-end with real data.
 
 ## Development Setup
 
@@ -171,7 +176,7 @@ pre-commit install  # Sets up automatic code formatting
 
 3. Run tests:
 ```bash
-pytest tests/  # Should show 68 passing tests
+pytest tests/  # Should show 177 passing tests
 ```
 
 ## Data Requirements

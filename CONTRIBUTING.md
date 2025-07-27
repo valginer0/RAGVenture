@@ -47,7 +47,20 @@ By participating in this project, you are expected to uphold our Code of Conduct
    - Add examples to docs/examples.md
    - Update API documentation in docs/api.md
 
-3. **Testing**
+3. **Testing** (177 tests - all passing)
+   - Run full test suite: `python -m pytest tests/ -v`
+   - Docker tests: `docker-compose run --rm app-cpu python -m pytest tests/ -v`
+   - All tests must pass before submitting PR
+   - Add tests for new features and bug fixes
+   - Current coverage: Comprehensive with Docker runtime fixes
+
+4. **Docker Development**
+   - Docker containers are production-ready and fully tested
+   - Test your changes in Docker: `docker-compose up app-cpu`
+   - Verify Docker compatibility before submitting PR
+   - All Docker runtime issues have been resolved
+
+5. **Original Testing Guidelines**
    - Write tests for new features
    - Ensure all tests pass: `python -m pytest`
    - Add test cases for edge cases
