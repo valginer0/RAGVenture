@@ -30,7 +30,7 @@ RUN pip install --no-cache-dir spacy && \
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app:/app/src
 
 # Create directories for logs and model cache
 RUN mkdir -p /app/logs && chmod 777 /app/logs && \

@@ -9,7 +9,7 @@ services:
     env_file:
       - .env
     environment:
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app:/app/src
       - RAG_SMART_MODELS=true
       - RAG_MODEL_CHECK_INTERVAL=3600
       - RAG_MODEL_TIMEOUT=60
@@ -29,7 +29,7 @@ services:
     env_file:
       - .env
     environment:
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app:/app/src
       - RAG_SMART_MODELS=true
       - RAG_MODEL_CHECK_INTERVAL=3600
       - RAG_MODEL_TIMEOUT=60
@@ -50,7 +50,7 @@ services:
     env_file:
       - .env
     environment:
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app:/app/src
       - RAG_SMART_MODELS=true
       - RAG_MODEL_CHECK_INTERVAL=3600
       - RAG_MODEL_TIMEOUT=60
@@ -69,7 +69,7 @@ services:
     env_file:
       - .env
     environment:
-      - PYTHONPATH=/app
+      - PYTHONPATH=/app:/app/src
       - RAG_SMART_MODELS=true
       - RAG_MODEL_CHECK_INTERVAL=3600
       - RAG_MODEL_TIMEOUT=60

@@ -11,7 +11,7 @@ WORKDIR /app
 
 # Set environment variables to force CPU mode
 ENV PYTHONUNBUFFERED=1
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app:/app/src
 ENV CUDA_VISIBLE_DEVICES=""
 ENV FORCE_CUDA=0
 
