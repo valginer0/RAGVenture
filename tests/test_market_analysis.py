@@ -1,6 +1,5 @@
 """Tests for market analysis functionality."""
 
-from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -15,11 +14,7 @@ from rag_startups.analysis.external_data import (
     WorldBankData,
     get_industry_analysis,
 )
-from rag_startups.analysis.market_size import (
-    MarketSegment,
-    MarketSizeEstimator,
-    MarketStage,
-)
+from rag_startups.analysis.market_size import MarketSegment, MarketSizeEstimator
 
 # Sample test data
 SAMPLE_STARTUP_DATA = [

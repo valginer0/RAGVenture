@@ -5,7 +5,6 @@ CLI commands for model management and health checking.
 from typing import Optional
 
 import typer
-from rich import print as rprint
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -64,7 +63,8 @@ def status(
         embed_icon = "✅" if embed_info["healthy"] else "❌"
 
         panel = Panel(
-            f"{overall_icon} [bold]Overall System Health: [{overall_color}]{'HEALTHY' if health_info['overall_healthy'] else 'UNHEALTHY'}[/{overall_color}][/bold]\n\n"
+            f"{overall_icon} [bold]Overall System Health: "
+            f"[{overall_color}]{'HEALTHY' if health_info['overall_healthy'] else 'UNHEALTHY'}[/{overall_color}][/bold]\n\n"
             f"{lang_icon} [bold]Language Model[/bold]\n"
             f"   Name: {lang_info['name']}\n"
             f"   Status: [{lang_color}]{lang_info['status']}[/{lang_color}]\n\n"

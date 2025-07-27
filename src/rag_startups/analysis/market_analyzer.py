@@ -4,12 +4,7 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-from .external_data import (
-    BLSData,
-    IndustryMetrics,
-    WorldBankData,
-    get_industry_analysis,
-)
+from .external_data import BLSData, WorldBankData
 
 logger = logging.getLogger(__name__)
 

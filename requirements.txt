@@ -19,11 +19,13 @@ wbdata>=0.3.0
 typer[all]>=0.9.0  # CLI interface with rich output
 spacy>=3.0.0  # For industry classification
 
-# Development dependencies
+# Development and testing
 pytest>=7.0.0
-pytest-cov>=4.1.0
+pytest-cov>=4.0.0
+pre-commit>=3.5.0
 black==24.2.0  # Match pre-commit version
 flake8>=6.0.0
 isort>=5.13.2  # Match pre-commit version
+autoflake>=2.3.0  # Automated unused import removal
+autopep8>=2.3.0  # Automated PEP8 formatting
 mypy>=1.0.0
-pre-commit>=3.5.0  # Added for automated formatting

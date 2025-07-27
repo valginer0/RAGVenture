@@ -3,13 +3,13 @@ Dependency patterns tests.
 These tests prepare for dependency injection refactoring.
 """
 
-from unittest.mock import MagicMock, Mock, mock_open, patch
+from unittest.mock import Mock, mock_open, patch
 
 import pandas as pd
 import pytest
 
 import src.rag_startups.core.rag_chain as rag_chain_module
-from src.rag_startups.core.rag_chain import format_startup_idea, initialize_rag
+from src.rag_startups.core.rag_chain import initialize_rag
 from src.rag_startups.core.startup_metadata import StartupLookup
 from src.rag_startups.data.loader import initialize_startup_lookup, load_data
 

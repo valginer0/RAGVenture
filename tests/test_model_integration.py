@@ -5,23 +5,13 @@ These tests cover the model availability and fallback issues discovered
 during performance testing, ensuring robust model management behavior.
 """
 
-from datetime import datetime
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 import requests
 
-from rag_startups.core.model_manager import (
-    ModelConfig,
-    ModelManager,
-    ModelStatus,
-    ModelType,
-)
-from rag_startups.core.model_migrations import (
-    MigrationReason,
-    ModelMigration,
-    ModelMigrationTracker,
-)
+from rag_startups.core.model_manager import ModelManager, ModelStatus, ModelType
+from rag_startups.core.model_migrations import MigrationReason, ModelMigrationTracker
 from rag_startups.idea_generator.generator import StartupIdeaGenerator
 
 
@@ -104,6 +94,8 @@ class TestModelManagerIntegration:
 
                 # Verify migration suggestion was used
                 mock_tracker.suggest_replacement.assert_called()
+                # Verify we got a valid model back
+                assert model is not None
 
     def test_model_caching_behavior(self):
         """Test model status caching behavior."""
@@ -278,7 +270,6 @@ class TestEndToEndIntegration:
         """Test that our performance test components work correctly."""
         # This test validates the components used in test_performance.py
         from rag_startups.core.startup_metadata import StartupLookup
-        from rag_startups.data.loader import load_data
 
         # Test with minimal sample data
         sample_data = [

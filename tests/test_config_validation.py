@@ -4,7 +4,7 @@ These tests ensure safe refactoring of configuration handling.
 """
 
 import os
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import click
 import pytest
@@ -173,7 +173,7 @@ class TestConfigurationValidation:
     def test_temperature_and_generation_params(self):
         """Test generation parameter handling."""
         with patch.dict(os.environ, {"HUGGINGFACE_TOKEN": "test"}):
-            generator = StartupIdeaGenerator()
+            StartupIdeaGenerator()
 
             # Test that generator accepts various temperature values
             # (This documents current parameter handling)

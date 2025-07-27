@@ -1,9 +1,10 @@
 import os
 import sys
 
+from src.rag_startups.core.rag_chain import format_startup_idea
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from src.rag_startups.core.rag_chain import format_startup_idea
 
 # Test cases
 TEST_CASES = [

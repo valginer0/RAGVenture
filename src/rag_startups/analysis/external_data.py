@@ -3,20 +3,20 @@
 import datetime
 import logging
 import os
-from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional
 
 import requests
 import spacy
 import wbdata
 from dotenv import load_dotenv
 
+from ..utils.caching import cache_result
+
 # Load environment variables from .env file
 load_dotenv(override=True)  # This will load .env and override existing env vars
 
-from ..utils.caching import cache_result
 
 # Configure logging
 logger = logging.getLogger(__name__)

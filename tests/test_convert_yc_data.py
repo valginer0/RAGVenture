@@ -1,16 +1,16 @@
 """Tests for YC data conversion script."""
 
 import json
-import os
 import sys
 from pathlib import Path
 
 import pytest
 
+from rag_startups.data.convert_yc_data import clean_description, convert_csv_to_json
+
 # Add src directory to Python path
 sys.path.append(str(Path(__file__).parent.parent / "src"))
 
-from rag_startups.data.convert_yc_data import clean_description, convert_csv_to_json
 
 # Get the test data directory
 TEST_DIR = Path(__file__).parent

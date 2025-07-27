@@ -4,8 +4,6 @@ Tests for the processors module.
 
 import re
 
-import pytest
-
 from rag_startups.idea_generator.processors import (
     generate_unique_name_suffix,
     parse_ideas,

@@ -7,7 +7,6 @@ intelligent fallback suggestions based on real-world model lifecycle patterns.
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional, Tuple
 

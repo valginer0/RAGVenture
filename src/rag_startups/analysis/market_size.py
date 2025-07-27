@@ -4,11 +4,10 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Tuple
 
 from .external_data import (
     BLSData,
-    IndustryMatch,
     IndustryMetrics,
     MarketRelationship,
     MarketRelationType,

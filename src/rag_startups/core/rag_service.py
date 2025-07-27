@@ -3,14 +3,11 @@ RAG Service with dependency injection.
 This replaces the global state pattern with proper dependency injection.
 """
 
-import re
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional, Tuple
 
 import pandas as pd
-from langchain_core.prompts import ChatPromptTemplate
-from transformers import pipeline
 
-from config.config import DEFAULT_PROMPT_TEMPLATE, LOCAL_LANGUAGE_MODEL, MAX_LINES
+from config.config import MAX_LINES
 
 from ..data.loader import create_documents, split_documents
 from ..embeddings.embedding import create_vectorstore, setup_retriever

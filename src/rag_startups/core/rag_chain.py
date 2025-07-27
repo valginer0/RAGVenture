@@ -4,14 +4,11 @@ This module provides backward compatibility for the old global state pattern
 while internally using the new dependency injection approach via RAGService.
 """
 
-import re
-from typing import Any, List, Optional, Tuple
+from typing import Any, Optional
 
 import pandas as pd
-from langchain_core.prompts import ChatPromptTemplate
-from transformers import pipeline
 
-from config.config import DEFAULT_PROMPT_TEMPLATE, LOCAL_LANGUAGE_MODEL, MAX_LINES
+from config.config import MAX_LINES
 
 from ..data.loader import create_documents, initialize_startup_lookup, split_documents
 from ..embeddings.embedding import create_vectorstore, setup_retriever

@@ -21,11 +21,20 @@ def generate_base_prompt(num_ideas: int, example_startups: List[dict] = None) ->
         example_startups = [
             {
                 "name": "Fragment",
-                "problem": "Fragment's premise is that every company using AI will need humans in the loop and software for the handoff between AI and humans.",
-                "solution": "We start by helping operations teams in fintech companies with task management for their manual processes (onboarding, compliance…).",
+                "problem": (
+                    "Fragment's premise is that every company using AI will need "
+                    "humans in the loop and software for the handoff between AI and humans."
+                ),
+                "solution": (
+                    "We start by helping operations teams in fintech companies "
+                    "with task management for their manual processes (onboarding, compliance…)."
+                ),
                 "target_market": "the handoff between ai and humans.",
                 "unique_value": [
-                    "We start by helping operations teams in fintech companies with task management for their manual processes (onboarding, compliance…)"
+                    (
+                        "We start by helping operations teams in fintech companies "
+                        "with task management for their manual processes (onboarding, compliance…)"
+                    )
                 ],
             },
             # Add more default examples here

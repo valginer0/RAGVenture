@@ -11,7 +11,6 @@ import pytest
 import src.rag_startups.core.rag_chain as rag_chain_module
 from src.rag_startups.core.rag_chain import (
     format_startup_idea,
-    get_similar_description,
     initialize_rag,
     rag_chain_local,
 )

@@ -1,7 +1,7 @@
 # Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+# Press Double Shift to search everywhere for classes, files, tool
+# windows, actions, and settings.
 
-import langchain
 import langsmith
 import pandas as pd
 from langchain_community.vectorstores import FAISS

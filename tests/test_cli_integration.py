@@ -9,9 +9,8 @@ import json
 import os
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
-import pytest
 from typer.testing import CliRunner
 
 from rag_startups.cli import app

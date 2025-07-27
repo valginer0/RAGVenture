@@ -3,14 +3,14 @@
 import os
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 from pydantic import ValidationError
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from .settings import RAGSettings, get_settings
+from .settings import get_settings
 
 
 class ConfigurationValidator:
@@ -165,7 +165,8 @@ class ConfigurationValidator:
         ]
 
         for pattern, recommendation in hardcoded_patterns:
-            # This is a simplified check - in practice, you'd want more sophisticated analysis
+            # This is a simplified check - in practice, you'd want more sophisticated
+            # analysis
             if any(
                 pattern in file.read_text(encoding="utf-8", errors="ignore")
                 for file in src_dir.rglob("*.py")

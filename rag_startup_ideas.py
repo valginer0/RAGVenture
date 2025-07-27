@@ -10,7 +10,6 @@ LANGCHAIN_PROJECT="the name of your langsmith project"
 
 import argparse
 import os
-from pathlib import Path
 
 from embed_master import calculate_result, initialize_embeddings
 from src.rag_startups.core.startup_metadata import StartupLookup
@@ -67,7 +66,7 @@ if __name__ == "__main__":
     if not os.path.exists(args.file):
         print(f"Error: File '{args.file}' not found.")
         print(
-            f"Make sure the file exists or specify a different file with --file option."
+            "Make sure the file exists or specify a different file with --file option."
         )
         exit(1)
 

@@ -3,8 +3,6 @@
 import os
 import time
 
-import pytest
-
 from rag_startups.utils.caching import cache_result, get_redis_client
 
 

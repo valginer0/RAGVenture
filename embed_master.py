@@ -8,23 +8,17 @@ LANGCHAIN_PROJECT="the name of your langsmith project"
 
 """
 
-import json
 import logging
-import time
 from typing import Any, List, Optional, Tuple
 
 import pandas as pd
-from langchain.docstore.document import Document
 from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langsmith import traceable
 from sentence_transformers import SentenceTransformer
 from transformers import pipeline
 
 from config.config import LOCAL_LANGUAGE_MODEL
-from src.rag_startups.core.rag_chain import format_startup_idea, initialize_rag
-from src.rag_startups.core.startup_metadata import StartupLookup
+from src.rag_startups.core.rag_chain import format_startup_idea
 from src.rag_startups.data.loader import (
     StartupLookup,
     create_documents,
@@ -114,7 +108,8 @@ def rag_chain_local(question, generator, prompt, retriever, lookup=None, num_ide
             f"First document type: {type(context_docs[0] if context_docs else None)}"
         )
         logging.debug(
-            f"First document content: {context_docs[0].page_content if context_docs else None}"
+            f"First document content: "
+            f"{context_docs[0].page_content if context_docs else None}"
         )
 
         formatted_ideas = []

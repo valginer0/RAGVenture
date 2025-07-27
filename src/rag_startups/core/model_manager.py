@@ -11,7 +11,7 @@ import time
 from dataclasses import asdict, dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import requests
 
@@ -98,7 +98,8 @@ class ModelManager:
                     "temperature": 0.7,
                     "do_sample": True,
                     "repetition_penalty": 1.2,
-                    # v0.3 improvements: extended vocab (32,768), v3 tokenizer, function calling
+                    # v0.3 improvements: extended vocab (32,768), v3 tokenizer, function
+                    # calling
                     "return_full_text": False,
                     "stop": ["</s>", "[/INST]"],
                 },
@@ -300,9 +301,10 @@ class ModelManager:
 
     def _check_local_model(self, config: ModelConfig) -> ModelStatus:
         """Check local model availability."""
-        # For local models, we assume they're available if we can import the required libraries
+        # For local models, we assume they're available if we can import the
+        # required libraries
         try:
-            import transformers
+            pass
 
             return ModelStatus.AVAILABLE
         except ImportError:
@@ -311,7 +313,7 @@ class ModelManager:
     def _check_sentence_transformer_model(self, config: ModelConfig) -> ModelStatus:
         """Check sentence transformer model availability."""
         try:
-            from sentence_transformers import SentenceTransformer
+            pass
 
             # Try to load the model (this will download if not cached)
             model_path = self.cache_dir / "sentence_transformers" / config.name

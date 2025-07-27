@@ -5,10 +5,10 @@ from pathlib import Path
 
 import pytest
 
+from src.rag_startups.core.startup_metadata import StartupLookup
+
 # Add src directory to Python path
 sys.path.append(str(Path(__file__).parent.parent))
-
-from src.rag_startups.core.startup_metadata import StartupLookup
 
 
 @pytest.fixture

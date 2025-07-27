@@ -2,15 +2,10 @@
 """Demo script for market analysis features."""
 
 import argparse
-import json
 import logging
-import os
-import sys
-from pathlib import Path
 
 from src.rag_startups.analysis.external_data import get_industry_analysis
 from src.rag_startups.analysis.market_size import MarketSizeEstimator
-from src.rag_startups.data.loader import load_data
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -86,10 +81,10 @@ def main():
     metrics = get_industry_analysis(args.industry_code)
 
     print("\nIndustry Analysis Results:")
-    print(f"GDP Contribution: ${metrics.gdp_contribution/1e9:.2f}B")
+    print(f"GDP Contribution: ${metrics.gdp_contribution / 1e9:.2f}B")
     print(f"Employment: {metrics.employment:,}")
     print(f"Growth Rate: {metrics.growth_rate:.1f}%")
-    print(f"Market Size: ${metrics.market_size/1e9:.2f}B")
+    print(f"Market Size: ${metrics.market_size / 1e9:.2f}B")
     print(f"Confidence Score: {metrics.confidence_score:.2f}")
     print(f"Data Sources: {', '.join(metrics.sources)}")
 

@@ -19,8 +19,6 @@ from .prompts import generate_base_prompt
 class RateLimitError(Exception):
     """Custom exception for rate limit handling"""
 
-    pass
-
 
 class StartupIdeaGenerator:
     """

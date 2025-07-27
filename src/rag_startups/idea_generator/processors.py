@@ -25,7 +25,8 @@ def standardize_field_names(text: str) -> str:
         "unique value",
     ]
 
-    # For each field, find any case variation followed by ':' and replace with proper capitalization
+    # For each field, find any case variation followed by ':' and replace with
+    # proper capitalization
     for field in fields:
         pattern = re.compile(f"{field}:", re.IGNORECASE)
         text = pattern.sub(f"{field.title()}:", text)

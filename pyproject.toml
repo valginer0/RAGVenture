@@ -73,3 +73,7 @@ testpaths = ["tests"]
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["rag_startups*"]
+
+[tool.flake8]
+max-line-length = 120
+extend-ignore = ["E501"]

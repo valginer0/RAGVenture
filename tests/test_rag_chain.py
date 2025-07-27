@@ -10,9 +10,6 @@ from langchain.docstore.document import Document
 from langchain_core.prompts import ChatPromptTemplate
 from transformers import pipeline
 
-# Add src directory to Python path
-sys.path.append(str(Path(__file__).parent.parent))
-
 from config.config import DEFAULT_PROMPT_TEMPLATE, LOCAL_LANGUAGE_MODEL
 from src.rag_startups.core.rag_chain import rag_chain_local
 from src.rag_startups.core.startup_metadata import StartupLookup
@@ -20,6 +17,9 @@ from src.rag_startups.data.loader import create_documents, split_documents
 from src.rag_startups.embeddings.embedding import create_vectorstore, setup_retriever
 from src.rag_startups.idea_generator.generator import StartupIdeaGenerator
 from src.rag_startups.idea_generator.processors import parse_startup_examples
+
+# Add src directory to Python path
+sys.path.append(str(Path(__file__).parent.parent))
 
 
 def test_create_and_split_document():

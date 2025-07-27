@@ -6,7 +6,6 @@ providing seamless model selection and fallback handling.
 """
 
 import logging
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from ..config.settings import RAGSettings

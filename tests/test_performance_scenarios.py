@@ -9,13 +9,11 @@ import json
 import tempfile
 import time
 from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
-
-import pytest
+from unittest.mock import Mock, patch
 
 from rag_startups.config.settings import get_settings
 from rag_startups.core.model_service import ModelService
-from rag_startups.core.rag_chain import format_startup_idea, initialize_rag
+from rag_startups.core.rag_chain import initialize_rag
 from rag_startups.core.startup_metadata import StartupLookup
 from rag_startups.data.loader import load_data
 

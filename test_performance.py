@@ -6,20 +6,18 @@ This script tests the complete workflow with real YC startup data,
 measuring performance of each component and validating functionality.
 """
 
-import json
 import sys
 import time
 from pathlib import Path
 
-# Add src to Python path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
-
 from rag_startups.config.settings import get_settings
-from rag_startups.core.model_manager import ModelType
 from rag_startups.core.model_service import ModelService
 from rag_startups.core.rag_chain import format_startup_idea, initialize_rag
 from rag_startups.core.startup_metadata import StartupLookup
 from rag_startups.data.loader import load_data
+
+# Add src to Python path
+sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 
 def main():
@@ -62,7 +60,7 @@ def main():
         retriever, startup_lookup = initialize_rag(df, json_data)
         rag_time = time.time() - rag_start
         print(f"   ✅ Initialized RAG system in {rag_time:.2f}s")
-        print(f"   🔗 Vector store and retriever ready")
+        print("   🔗 Vector store and retriever ready")
     except Exception as e:
         print(f"   ❌ RAG initialization failed: {e}")
         return False
@@ -143,25 +141,25 @@ def main():
 
     # Performance Summary
     total_time = time.time() - total_start
-    print(f"\n=== 📈 PERFORMANCE SUMMARY ===")
+    print("\n=== 📈 PERFORMANCE SUMMARY ===")
     print(f"Data Loading:      {load_time:.2f}s")
     print(f"Lookup Init:       {lookup_time:.2f}s")
     print(f"RAG Init:          {rag_time:.2f}s")
     print(f"Model Selection:   {model_time:.2f}s")
     print(f"Idea Formatting:   {format_time:.2f}s")
-    print(f"─" * 30)
+    print("─" * 30)
     print(f"TOTAL TIME:        {total_time:.2f}s")
 
     # System Status
-    print(f"\n=== 🎯 SYSTEM STATUS ===")
-    print(f"✅ Status: FULLY FUNCTIONAL")
+    print("\n=== 🎯 SYSTEM STATUS ===")
+    print("✅ Status: FULLY FUNCTIONAL")
     print(f"📊 Data: {len(df)} YC startups processed")
-    print(f"🤖 Models: Smart management active")
-    print(f"🧠 RAG: Vector retrieval operational")
+    print("🤖 Models: Smart management active")
+    print("🧠 RAG: Vector retrieval operational")
     print(f"⚡ Performance: {len(df)/total_time:.0f} startups/second overall")
 
     # Performance Assessment
-    print(f"\n=== 🏆 PERFORMANCE ASSESSMENT ===")
+    print("\n=== 🏆 PERFORMANCE ASSESSMENT ===")
     if total_time < 30:
         print("🚀 EXCELLENT: System startup under 30 seconds")
     elif total_time < 60:
@@ -176,8 +174,8 @@ def main():
     else:
         print("⚠️  SLOW: RAG initialization over 30 seconds")
 
-    print(f"\n🎉 End-to-end test completed successfully!")
-    print(f"🔗 System ready for production workloads")
+    print("\n🎉 End-to-end test completed successfully!")
+    print("🔗 System ready for production workloads")
 
     return True
 

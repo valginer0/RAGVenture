@@ -2,8 +2,6 @@
 Example usage of the StartupIdeaGenerator.
 """
 
-import os
-
 from dotenv import load_dotenv
 
 from rag_startups.idea_generator.generator import StartupIdeaGenerator

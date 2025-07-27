@@ -3,11 +3,10 @@ Tests for the StartupIdeaGenerator class.
 """
 
 from datetime import datetime, timedelta
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
-from rag_startups.idea_generator import generator as gen_module
 from rag_startups.idea_generator.generator import RateLimitError, StartupIdeaGenerator
 
 
