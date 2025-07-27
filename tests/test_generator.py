@@ -121,9 +121,9 @@ def test_rate_limit_error(mock_text_generation, generator):
 
 @patch("huggingface_hub.InferenceClient.text_generation")
 @patch("rag_startups.idea_generator.generator.parse_ideas")
-@patch("rag_startups.analysis.market_analyzer.MarketAnalyzer.analyze_startup_idea")
+@patch("rag_startups.idea_generator.generator.StartupIdeaGenerator._analyze_market")
 def test_market_analysis_error_handling(
-    mock_analyze, mock_parse, mock_text_generation, generator
+    mock_analyze_market, mock_parse, mock_text_generation, generator
 ):
     """Test handling of market analysis errors."""
     mock_text_generation.return_value = "Test response"
@@ -135,7 +135,8 @@ def test_market_analysis_error_handling(
             "target_market": "Test market",
         }
     ]
-    mock_analyze.side_effect = Exception("Analysis failed")
+    # Mock the cached _analyze_market method to return None (simulating failure)
+    mock_analyze_market.return_value = None
 
     response, insights = generator.generate(num_ideas=1, include_market_analysis=True)
 
