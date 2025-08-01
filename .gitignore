@@ -143,6 +143,8 @@ models/
 *.pt
 *.pth
 *.onnx
+# Python wheels
+*.whl
 
 # Environment
 .env
