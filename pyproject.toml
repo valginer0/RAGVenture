@@ -64,6 +64,11 @@ docs = [
     "mkdocs-literate-nav>=0.6.0",
     "mkdocs-include-markdown-plugin>=4.0.0",
 ]
+# Extra for release tooling
+publish = [
+    "build>=1.0.0",
+    "twine>=4.0.0",
+]
 
 [tool.black]
 line-length = 88
