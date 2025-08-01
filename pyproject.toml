@@ -5,18 +5,21 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "rag_startups"
 version = "0.9.0"
+keywords = ["rag", "ai", "startup", "langchain"]
+readme = "README.md"
+
+
 authors = [
     { name = "Val Giner", email = "valginer0@gmail.com" },
 ]
-description = "RAG-based startup ideas generation"
-readme = "README.md"
+description = "Generate startup ideas grounded in real YC data using Retrieval-Augmented Generation (RAG)."
 requires-python = ">=3.11"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-dynamic = ["scripts"]
+# Removed dynamic scripts; explicit script entry point declared below
 dependencies = [
     "langchain>=0.1.0",
     "langchain-community>=0.0.1",
@@ -67,6 +70,10 @@ line-length = 88
 target-version = ["py311"]
 include = '\.pyi?$'
 
+[project.urls]
+Homepage = "https://github.com/valginer0/rag_startups"
+Repository = "https://github.com/valginer0/rag_startups"
+
 [tool.isort]
 profile = "black"
 multi_line_output = 3
@@ -75,6 +82,9 @@ line_length = 88
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
+
+[project.scripts]
+rag-startups = "rag_startups.cli:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]
