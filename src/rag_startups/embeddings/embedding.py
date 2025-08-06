@@ -7,12 +7,11 @@ from langchain.docstore.document import Document
 from langchain_community.vectorstores.chroma import Chroma
 from sentence_transformers import SentenceTransformer
 
-from config.config import (
+from ..config.config import (
     DEFAULT_EMBEDDING_MODEL,
     DEFAULT_RETRIEVER_TOP_K,
     DEFAULT_SEARCH_TYPE,
 )
-
 from ..utils.exceptions import EmbeddingError
 from ..utils.timing import timing_decorator
 

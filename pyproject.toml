@@ -37,8 +37,9 @@ dependencies = [
     "redis>=5.0.1",
     "cachetools>=5.3.2",  # For in-memory caching fallback
     "fakeredis>=2.20.0",  # For development Redis server
-    "spacy>=3.0.0",  # For industry classification
-    "en-core-web-sm>=3.7.1",  # spaCy English model from PyPI
+    "spacy>=3.7.2",  # Core NLP library (pinned minor for model compatibility)
+
+
 ]
 
 [project.optional-dependencies]
@@ -95,6 +96,10 @@ rag-startups = "rag_startups.cli:app"
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["rag_startups*"]
+
+# Ensure top-level helper modules are packaged
+[tool.setuptools]
+py-modules = ["embed_master"]
 
 [tool.flake8]
 max-line-length = 120

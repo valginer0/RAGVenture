@@ -1,5 +1,6 @@
 """Enhanced configuration management with validation and environment support."""
 
+import os
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -296,11 +297,29 @@ Return the most relevant examples."""
 _settings: Optional[RAGSettings] = None
 
 
+def _env_fingerprint() -> str:
+    """Return a string fingerprint of critical env vars that influence settings."""
+    return os.getenv("HUGGINGFACE_TOKEN", "")
+
+
 def get_settings() -> RAGSettings:
-    """Get global settings instance (singleton pattern)."""
+    """Get global settings instance (singleton with smart reload).
+
+    If critical environment variables have changed since the cached instance
+    was created, build a fresh instance so that tests using ``patch.dict`` or
+    dynamic configuration changes behave as expected.
+    """
     global _settings
     if _settings is None:
         _settings = RAGSettings()
+        _settings._fingerprint = _env_fingerprint()  # type: ignore[attr-defined]
+    else:
+        # If the fingerprint changed, rebuild settings
+        current_fp = _env_fingerprint()
+        cached_fp = getattr(_settings, "_fingerprint", None)
+        if cached_fp != current_fp:
+            _settings = RAGSettings()
+            _settings._fingerprint = current_fp  # type: ignore[attr-defined]
     return _settings
 
 
@@ -308,6 +327,7 @@ def reload_settings() -> RAGSettings:
     """Reload settings (useful for testing)."""
     global _settings
     _settings = RAGSettings()
+    _settings._fingerprint = _env_fingerprint()  # type: ignore[attr-defined]
     return _settings
 
 

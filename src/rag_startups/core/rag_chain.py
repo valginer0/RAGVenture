@@ -8,8 +8,7 @@ from typing import Any, Optional
 
 import pandas as pd
 
-from config.config import MAX_LINES
-
+from ..config.config import MAX_LINES
 from ..data.loader import create_documents, initialize_startup_lookup, split_documents
 from ..embeddings.embedding import create_vectorstore, setup_retriever
 from ..utils.exceptions import ModelError

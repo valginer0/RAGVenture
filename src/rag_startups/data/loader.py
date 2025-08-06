@@ -7,8 +7,7 @@ import pandas as pd
 from langchain_community.docstore.document import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from config.config import CHUNK_OVERLAP, CHUNK_SIZE
-
+from ..config.config import CHUNK_OVERLAP, CHUNK_SIZE
 from ..core.startup_metadata import StartupLookup
 from ..utils.exceptions import DataLoadError
 from ..utils.timing import timing_decorator

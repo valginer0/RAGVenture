@@ -1,20 +1,22 @@
 """Command-line interface for startup idea generation."""
 
 import os
+import sys
+from pathlib import Path
 from typing import Optional
 
 import typer
+from huggingface_hub import hf_hub_download
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-
-from embed_master import calculate_result, initialize_embeddings
 
 from .cli_models import app as models_app
 from .config.settings import get_settings
 from .core.model_service import ModelService
 from .core.startup_metadata import StartupLookup
 from .data.loader import load_data
+from .embed_master import calculate_result, initialize_embeddings
 from .idea_generator.generator import StartupIdeaGenerator
 from .idea_generator.processors import parse_ideas
 from .utils.caching import clear_cache
@@ -253,6 +255,77 @@ def clear():
     except Exception as e:
         console.print(f"[red]Failed to clear cache: {e}[/red]")
         raise typer.Exit(1)
+
+
+@app.command()
+def quickstart(
+    no_input: bool = typer.Option(False, help="Run without interactive prompts")
+):
+    """Interactive wizard to set up the project quickly.
+
+    Steps:
+    1. Verify Python version (>= 3.11)
+    2. Create/update a `.env` file with HUGGINGFACE_TOKEN.
+    3. Download a small language model for immediate use.
+    4. Run an example query to verify everything works.
+    """
+
+    # 1. Python version check
+    if sys.version_info < (3, 11):
+        console.print("[red]Python 3.11+ is required to run rag_startups.[/red]")
+        raise typer.Exit(1)
+
+    # 2. Obtain token (env var or prompt)
+    token = os.getenv("HUGGINGFACE_TOKEN")
+    if not token:
+        if no_input:
+            console.print(
+                "[red]HUGGINGFACE_TOKEN is not set. Provide it as an environment variable or run without --no-input for an interactive prompt.[/red]"
+            )
+            raise typer.Exit(1)
+        token = typer.prompt("Enter your HuggingFace API token", hide_input=True)
+        os.environ["HUGGINGFACE_TOKEN"] = token
+
+    # Create or update .env file
+    env_path = Path(".env")
+    if env_path.exists():
+        content = env_path.read_text()
+        if "HUGGINGFACE_TOKEN" not in content:
+            with env_path.open("a", encoding="utf-8") as env_file:
+                env_file.write(f"HUGGINGFACE_TOKEN={token}\n")
+    else:
+        env_path.write_text(f"HUGGINGFACE_TOKEN={token}\n", encoding="utf-8")
+    console.print("[green]`.env` file configured.[/green]")
+
+    # 3. Download a small model so the user can start immediately
+    console.print(
+        "[blue]Downloading example model (sentence-transformers/all-MiniLM-L6-v2)...[/blue]"
+    )
+    try:
+        hf_hub_download(
+            repo_id="sentence-transformers/all-MiniLM-L6-v2",
+            filename="config.json",
+            token=token,
+        )
+        console.print("[green]Model download complete.[/green]")
+    except Exception as exc:  # pragma: no cover — network may fail during CI
+        console.print(f"[yellow]Model download skipped: {exc}[/yellow]")
+
+    # 4. Run an example query to verify setup
+    try:
+        generator = StartupIdeaGenerator(
+            model_name="sentence-transformers/all-MiniLM-L6-v2", token=token
+        )
+        response, _ = generator.generate(
+            num_ideas=1,
+            example_startups=[],
+            include_market_analysis=False,
+        )
+        console.print(Panel(response, title="Quickstart Example", expand=False))
+    except Exception as exc:  # pragma: no cover
+        console.print(f"[yellow]Skipping example generation: {exc}[/yellow]")
+
+    console.print("[bold green]Quickstart completed successfully![/bold green]")
 
 
 if __name__ == "__main__":
