@@ -132,7 +132,7 @@ class ModelManager:
             ),
             # Stable GPT-2 variants (always available)
             ModelConfig(
-                name="gpt2",
+                name="openai-community/gpt2",
                 model_type=ModelType.LANGUAGE_GENERATION,
                 provider="huggingface",
                 fallback_priority=4,
@@ -140,10 +140,11 @@ class ModelManager:
                     "max_new_tokens": 600,
                     "temperature": 0.7,
                     "do_sample": True,
+                    "_expected_sha": "607a30d783dfa663caf39e06633721c8d4cfcd7e",  # For validation
                 },
             ),
             ModelConfig(
-                name="distilgpt2",
+                name="distilbert/distilgpt2",
                 model_type=ModelType.LANGUAGE_GENERATION,
                 provider="huggingface",
                 fallback_priority=5,
@@ -277,13 +278,33 @@ class ModelManager:
             return ModelStatus.UNAVAILABLE
 
     def _check_huggingface_model(self, config: ModelConfig) -> ModelStatus:
-        """Check HuggingFace model availability."""
-        url = f"https://api-inference.huggingface.co/models/{config.name}"
+        """Check HuggingFace model availability using model info API."""
+        # Use the model info API instead of inference API for better reliability
+        url = f"https://huggingface.co/api/models/{config.name}"
 
         try:
-            response = requests.head(url, timeout=self.timeout)
+            response = requests.get(url, timeout=self.timeout)
             if response.status_code == 200:
+                model_info = response.json()
+
+                # Check if model is deprecated or private
+                if model_info.get("private", False):
+                    logger.warning(f"HuggingFace model is private: {config.name}")
+                    return ModelStatus.UNAVAILABLE
+
+                # Check for deprecation markers
+                if "deprecated" in model_info.get("tags", []):
+                    logger.warning(f"HuggingFace model is deprecated: {config.name}")
+                    return ModelStatus.UNAVAILABLE
+
+                # Store SHA for validation if available
+                if "sha" in model_info:
+                    config.parameters = config.parameters or {}
+                    config.parameters["_model_sha"] = model_info["sha"]
+                    logger.debug(f"Model {config.name} SHA: {model_info['sha']}")
+
                 return ModelStatus.AVAILABLE
+
             elif response.status_code == 404:
                 logger.warning(f"HuggingFace model not found: {config.name}")
                 return ModelStatus.UNAVAILABLE
@@ -298,17 +319,62 @@ class ModelManager:
                 f"Network error checking HuggingFace model {config.name}: {e}"
             )
             return ModelStatus.UNKNOWN
+        except Exception as e:
+            logger.warning(
+                f"Error parsing HuggingFace model info for {config.name}: {e}"
+            )
+            return ModelStatus.UNKNOWN
 
     def _check_local_model(self, config: ModelConfig) -> ModelStatus:
-        """Check local model availability."""
-        # For local models, we assume they're available if we can import the
-        # required libraries
-        try:
-            pass
+        """Check local model availability with fallback to HuggingFace."""
+        logger.info(f"Checking local model: {config.name}")
 
-            return ModelStatus.AVAILABLE
-        except ImportError:
-            return ModelStatus.UNAVAILABLE
+        # Check if local model directory exists
+        local_path = self.cache_dir / "transformers" / config.name.replace("/", "--")
+        logger.info(f"Looking for local model at: {local_path}")
+
+        if local_path.exists() and (local_path / "config.json").exists():
+            logger.info(f"Found cached local model: {config.name}")
+            return ModelStatus.CACHED
+
+        # If local model doesn't exist, check if we can fall back to HuggingFace
+        if config.name.startswith("local-"):
+            # Try to map local-* names to actual HuggingFace models
+            actual_name = config.name.replace("local-", "")
+            if actual_name == "gpt2":
+                actual_name = "openai-community/gpt2"  # Updated namespace
+
+            logger.info(
+                f"Local model {config.name} not found, checking HuggingFace fallback: {actual_name}"
+            )
+
+            # Create temporary config for HF check
+            temp_config = ModelConfig(
+                name=actual_name,
+                model_type=config.model_type,
+                provider="huggingface",
+                fallback_priority=config.fallback_priority,
+            )
+
+            hf_status = self._check_huggingface_model(temp_config)
+            if hf_status == ModelStatus.AVAILABLE:
+                # Update the config to use HuggingFace instead
+                config.name = actual_name
+                config.provider = "huggingface"
+                logger.info(f"Upgraded local model to HuggingFace: {actual_name}")
+                return ModelStatus.AVAILABLE
+            elif hf_status == ModelStatus.UNKNOWN:
+                # HF model exists but API is having issues - return UNKNOWN to try it later
+                logger.info(
+                    f"Local model {config.name} not found, HuggingFace fallback {actual_name} has unknown status"
+                )
+                return ModelStatus.UNKNOWN
+
+        # Local model doesn't exist and no valid fallback
+        logger.warning(
+            f"Local model {config.name} not found and no valid fallback available"
+        )
+        return ModelStatus.UNAVAILABLE
 
     def _check_sentence_transformer_model(self, config: ModelConfig) -> ModelStatus:
         """Check sentence transformer model availability."""
@@ -354,15 +420,29 @@ class ModelManager:
         candidates.sort(key=lambda x: x.fallback_priority)
 
         # Check health and return first available
+        # Try models in order: AVAILABLE/CACHED -> UNKNOWN -> UNAVAILABLE
         migration_tracker = get_migration_tracker()
 
+        # First pass: try definitely available models
         for config in candidates:
             status = self.check_model_health(config.name, force=force_check)
-
             if status in [ModelStatus.AVAILABLE, ModelStatus.CACHED]:
                 logger.info(f"Selected model: {config.name} (status: {status.value})")
                 return config
-            elif status == ModelStatus.UNAVAILABLE:
+
+        # Second pass: try unknown models (might work despite network issues)
+        for config in candidates:
+            status = self.check_model_health(config.name, force=force_check)
+            if status == ModelStatus.UNKNOWN:
+                logger.info(
+                    f"Trying unknown model: {config.name} (network issues may resolve)"
+                )
+                return config
+
+        # Third pass: try migration for unavailable models
+        for config in candidates:
+            status = self.check_model_health(config.name, force=force_check)
+            if status == ModelStatus.UNAVAILABLE:
                 # Try intelligent migration suggestion
                 suggested_model = migration_tracker.suggest_replacement(config.name)
                 if suggested_model and suggested_model != config.name:

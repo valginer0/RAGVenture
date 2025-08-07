@@ -40,17 +40,18 @@ class TestModelManagerIntegration:
 
     def test_model_health_check_401_scenario(self):
         """Test model health check when model returns 401 (unauthorized)."""
-        with patch("rag_startups.core.model_manager.requests.head") as mock_head:
-            # Simulate 401 response (unauthorized)
+        with patch("rag_startups.core.model_manager.requests.get") as mock_get:
+            # Simulate 401 response (unauthorized) for the model info API
             mock_response = Mock()
             mock_response.status_code = 401
-            mock_head.return_value = mock_response
+            mock_get.return_value = mock_response
 
             # Test health check for a model that returns 401
             status = self.model_manager.check_model_health(
                 "mistralai/Mistral-7B-Instruct-v0.3", force=True
             )
 
+            # With the improved API, 401 should return UNKNOWN
             assert status == ModelStatus.UNKNOWN
 
     def test_get_best_model_with_migration_fallback(self):
@@ -79,13 +80,17 @@ class TestModelManagerIntegration:
             )
             mock_get_tracker.return_value = mock_tracker
 
-            with patch("rag_startups.core.model_manager.requests.head") as mock_head:
+            with patch("rag_startups.core.model_manager.requests.get") as mock_get:
                 # First model (v0.2) returns 404
-                # Second model (v0.3) returns 200
+                # Second model (v0.3) returns 200 with valid JSON
                 mock_responses = [Mock(), Mock()]
                 mock_responses[0].status_code = 404  # v0.2 not found
                 mock_responses[1].status_code = 200  # v0.3 available
-                mock_head.side_effect = mock_responses
+                mock_responses[1].json.return_value = {
+                    "sha": "test_sha",
+                    "private": False,
+                }
+                mock_get.side_effect = mock_responses
 
                 # This should trigger migration logic
                 model = self.model_manager.get_best_model(
