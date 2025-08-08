@@ -204,8 +204,8 @@ class StartupIdeaGenerator:
 
         except Exception as e:
             print(f"Local model generation failed: {e}")
-            # Fallback to a properly structured mock response for development
-            return self._generate_mock_structured_response(prompt)
+            # Don't mask the error with a mock response - surface the real issue
+            raise RuntimeError(f"Failed to load local model '{self.model_name}': {e}")
 
     def _generate_mock_structured_response(self, prompt: str) -> str:
         """Generate a properly structured mock response for development/testing."""

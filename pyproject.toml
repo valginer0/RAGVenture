@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rag_startups"
-version = "0.9.0"
+version = "0.9.1"
 keywords = ["rag", "ai", "startup", "langchain"]
 readme = "README.md"
 

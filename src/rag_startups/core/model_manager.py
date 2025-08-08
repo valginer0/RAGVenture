@@ -282,8 +282,17 @@ class ModelManager:
         # Use the model info API instead of inference API for better reliability
         url = f"https://huggingface.co/api/models/{config.name}"
 
+        # Add authentication headers if token is available
+        headers = {}
+        # Get token from settings instead of os.getenv() since .env is loaded by Pydantic
+        from ..config.settings import get_settings
+
+        settings = get_settings()
+        if settings.huggingface_token:
+            headers["Authorization"] = f"Bearer {settings.huggingface_token}"
+
         try:
-            response = requests.get(url, timeout=self.timeout)
+            response = requests.get(url, headers=headers, timeout=self.timeout)
             if response.status_code == 200:
                 model_info = response.json()
 
@@ -361,7 +370,13 @@ class ModelManager:
                 # Update the config to use HuggingFace instead
                 config.name = actual_name
                 config.provider = "huggingface"
-                logger.info(f"Upgraded local model to HuggingFace: {actual_name}")
+                # Give upgraded model better priority (mid-range, not last resort)
+                config.fallback_priority = 50
+                # Update the registry with the new config
+                self.model_configs[actual_name] = config
+                logger.info(
+                    f"Upgraded local model to HuggingFace: {actual_name} (priority: {config.fallback_priority})"
+                )
                 return ModelStatus.AVAILABLE
             elif hf_status == ModelStatus.UNKNOWN:
                 # HF model exists but API is having issues - return UNKNOWN to try it later
@@ -425,10 +440,22 @@ class ModelManager:
 
         # First pass: try definitely available models
         for config in candidates:
+            original_name = config.name
             status = self.check_model_health(config.name, force=force_check)
             if status in [ModelStatus.AVAILABLE, ModelStatus.CACHED]:
-                logger.info(f"Selected model: {config.name} (status: {status.value})")
-                return config
+                # If the config was updated during health check (e.g., local->HF upgrade),
+                # return the updated config from the registry
+                if config.name != original_name:
+                    updated_config = self.model_configs.get(config.name, config)
+                    logger.info(
+                        f"Selected model: {updated_config.name} (status: {status.value})"
+                    )
+                    return updated_config
+                else:
+                    logger.info(
+                        f"Selected model: {config.name} (status: {status.value})"
+                    )
+                    return config
 
         # Second pass: try unknown models (might work despite network issues)
         for config in candidates:
