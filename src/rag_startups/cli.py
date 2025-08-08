@@ -12,7 +12,6 @@ from rich.panel import Panel
 from rich.table import Table
 
 from .cli_models import app as models_app
-from .config.settings import get_settings
 from .core.model_service import ModelService
 from .core.startup_metadata import StartupLookup
 from .data.loader import load_data
@@ -131,6 +130,8 @@ def generate_all(
     token = validate_token()
 
     # Initialize smart model management
+    from .config.settings import get_settings
+
     settings = get_settings()
     model_service = ModelService(settings)
 

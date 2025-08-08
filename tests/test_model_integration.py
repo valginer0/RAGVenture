@@ -80,27 +80,43 @@ class TestModelManagerIntegration:
             )
             mock_get_tracker.return_value = mock_tracker
 
-            with patch("rag_startups.core.model_manager.requests.get") as mock_get:
-                # First model (v0.2) returns 404
-                # Second model (v0.3) returns 200 with valid JSON
-                mock_responses = [Mock(), Mock()]
-                mock_responses[0].status_code = 404  # v0.2 not found
-                mock_responses[1].status_code = 200  # v0.3 available
-                mock_responses[1].json.return_value = {
-                    "sha": "test_sha",
-                    "private": False,
-                }
-                mock_get.side_effect = mock_responses
+            # Mock all health check methods to force unavailable status for initial models
+            with patch.object(self.model_manager, "check_model_health") as mock_health:
+                # Mock health check to return UNAVAILABLE for all initial models
+                # The migration target will be checked separately in the migration logic
+                def mock_health_side_effect(model_name, **kwargs):
+                    return ModelStatus.UNAVAILABLE
 
-                # This should trigger migration logic
-                model = self.model_manager.get_best_model(
-                    ModelType.LANGUAGE_GENERATION, force_check=True
-                )
+                mock_health.side_effect = mock_health_side_effect
 
-                # Verify migration suggestion was used
-                mock_tracker.suggest_replacement.assert_called()
-                # Verify we got a valid model back
-                assert model is not None
+                with patch("rag_startups.core.model_manager.requests.get") as mock_get:
+                    # Migration suggestion returns 200 (available)
+                    def mock_response_side_effect(url, **kwargs):
+                        mock_response = Mock()
+                        if "Mistral-7B-Instruct-v0.3" in url:
+                            # Migration suggestion model is available
+                            mock_response.status_code = 200
+                            mock_response.json.return_value = {
+                                "sha": "test_sha",
+                                "private": False,
+                            }
+                        else:
+                            # All other models are unavailable
+                            mock_response.status_code = 404
+                        return mock_response
+
+                    mock_get.side_effect = mock_response_side_effect
+
+                    # This should trigger migration logic
+                    model = self.model_manager.get_best_model(
+                        ModelType.LANGUAGE_GENERATION, force_check=True
+                    )
+
+                    # Verify migration suggestion was used
+                    mock_tracker.suggest_replacement.assert_called()
+                    # Verify we got a valid model back
+                    assert model is not None
+                    assert model.name == "mistralai/Mistral-7B-Instruct-v0.3"
 
     def test_model_caching_behavior(self):
         """Test model status caching behavior."""

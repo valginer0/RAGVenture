@@ -42,7 +42,7 @@ class TestCLIIntegration:
         temp_file.close()
         return temp_file.name
 
-    @patch("rag_startups.cli.get_settings")
+    @patch("rag_startups.config.settings.get_settings")
     @patch("rag_startups.cli.ModelService")
     @patch("rag_startups.cli.load_data")
     @patch("rag_startups.cli.StartupLookup")
@@ -128,7 +128,7 @@ class TestCLIIntegration:
             # Clean up temporary file
             os.unlink(temp_file)
 
-    @patch("rag_startups.cli.get_settings")
+    @patch("rag_startups.config.settings.get_settings")
     @patch("rag_startups.cli.ModelService")
     @patch("rag_startups.cli.validate_token")
     def test_cli_model_fallback_scenario(
