@@ -67,7 +67,7 @@ def test_ttl_cache_fallback():
     assert call_count == 2  # Should have called function again
 
 
-def test_cache_error_handling():
+def test_cache_error_handling(monkeypatch):
     """Test that functions still work when caching fails."""
     # Clear any existing Redis settings
     os.environ.pop("REDIS_HOST", None)
@@ -91,8 +91,26 @@ def test_cache_error_handling():
     assert result2 == 10
     assert call_count == 1  # Shouldn't have called function again
 
-    # Force cache error by setting invalid host
-    os.environ["REDIS_HOST"] = "nonexistent_host"
+    # Force cache error path but fail fast without network waits by monkeypatching Redis
+    import redis
+
+    class _FailFastRedis(redis.Redis):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+
+        def ping(self):
+            raise redis.ConnectionError("boom")
+
+        def get(self, *a, **k):
+            raise redis.ConnectionError("boom")
+
+        def setex(self, *a, **k):
+            raise redis.ConnectionError("boom")
+
+    monkeypatch.setattr(redis, "Redis", _FailFastRedis)
+
+    # Ensure code path goes through Redis branch
+    os.environ["REDIS_HOST"] = "somehost"
 
     # Should still work, but will call function again
     result3 = sample_function(5)

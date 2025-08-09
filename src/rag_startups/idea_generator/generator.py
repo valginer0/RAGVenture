@@ -35,12 +35,12 @@ class StartupIdeaGenerator:
         self.model_name = model_name
         self.max_requests_per_hour = max_requests_per_hour
         self.token = token or os.getenv("HUGGINGFACE_TOKEN")
-
-        # Auto-detect if this is a local model
         self.use_local = (
             use_local if use_local is not None else model_name.startswith("local-")
         )
-
+        # Ensure attributes exist regardless of path; local fallback may be used
+        self.client = None
+        self._local_model = None
         if not self.use_local and not self.token:
             raise ValueError("HuggingFace token not provided for remote model")
 
@@ -49,8 +49,8 @@ class StartupIdeaGenerator:
 
         # Initialize client based on model type
         if self.use_local:
-            self.client = None  # Will use local transformers
-            self._local_model = None
+            # Will use local transformers; client remains None
+            pass
         else:
             self.client = InferenceClient(model=self.model_name, token=self.token)
         self.market_analyzer = MarketAnalyzer()
@@ -128,15 +128,27 @@ class StartupIdeaGenerator:
                     temperature=temperature,
                 )
             else:
-                # Use remote HuggingFace API
-                response = self.client.text_generation(
-                    prompt=prompt,
-                    model=self.model_name,
-                    max_new_tokens=1000,
-                    temperature=temperature,
-                    repetition_penalty=1.2,
-                    return_full_text=True,
-                )
+                # Use remote HuggingFace API, but fallback to local transformers if the
+                # provider mapping does not support text-generation for this model.
+                try:
+                    response = self.client.text_generation(
+                        prompt=prompt,
+                        model=self.model_name,
+                        max_new_tokens=1000,
+                        temperature=temperature,
+                        repetition_penalty=1.2,
+                        return_full_text=True,
+                    )
+                except Exception as e:
+                    # If provider-task mismatch occurs, fallback to local
+                    if "not supported for task" in str(e) or "provider" in str(e):
+                        response = self._generate_local(
+                            prompt=prompt,
+                            max_new_tokens=1000,
+                            temperature=temperature,
+                        )
+                    else:
+                        raise
 
             # Record request
             self._update_rate_limit()
@@ -204,30 +216,29 @@ class StartupIdeaGenerator:
 
         except Exception as e:
             print(f"Local model generation failed: {e}")
-            # Don't mask the error with a mock response - surface the real issue
             raise RuntimeError(f"Failed to load local model '{self.model_name}': {e}")
 
     def _generate_mock_structured_response(self, prompt: str) -> str:
-        """Generate a properly structured mock response for development/testing."""
-        # Extract topic from prompt if possible
-        topic = "fintech"  # default
-        if "fintech" in prompt.lower():
-            topic = "fintech"
-        elif "healthcare" in prompt.lower():
-            topic = "healthcare"
-        elif "education" in prompt.lower():
-            topic = "education"
+        """Test helper: return a structured, deterministic mock response.
+        Not used in production code paths; kept for unit tests that assert parser behavior.
+        """
+        topic = "General"
+        pl = prompt.lower() if isinstance(prompt, str) else ""
+        if "fintech" in pl:
+            topic = "Fintech"
+        elif "healthcare" in pl:
+            topic = "Healthcare"
+        elif "education" in pl:
+            topic = "Education"
 
-        # Generate mock structured response
-        mock_response = f"""Startup Idea 1:
-
-Name: MockTech-{topic.title()}
-Problem/Opportunity: Traditional {topic} solutions are outdated and inefficient, creating opportunities for modern AI-powered alternatives.
-Solution: An innovative platform that leverages artificial intelligence to streamline {topic} processes and improve user experience.
-Target Market: Small to medium businesses in the {topic} sector looking for digital transformation solutions.
-Unique Value: First-to-market AI integration with user-friendly interface and competitive pricing.
-"""
-        return mock_response
+        return (
+            "Startup Idea 1:\n\n"
+            f"Name: MockTech-{topic}\n"
+            f"Problem/Opportunity: Traditional {topic.lower()} solutions are outdated and inefficient.\n"
+            f"Solution: An innovative platform that leverages AI to improve {topic.lower()} processes.\n"
+            f"Target Market: SMBs in the {topic.lower()} sector.\n"
+            "Unique Value: AI-first experience with user-friendly interface.\n"
+        )
 
     @ttl_cache(ttl=3600)  # Cache market analysis results for 1 hour
     def _analyze_market(self, idea: Dict) -> Optional[MarketInsights]:
@@ -250,6 +261,3 @@ Unique Value: First-to-market AI integration with user-friendly interface and co
         TODO: Implement async version when needed
         """
         raise NotImplementedError("Async generation not yet implemented")
-
-
-# Test comment to verify edit capability

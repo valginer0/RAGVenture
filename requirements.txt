@@ -5,6 +5,7 @@ langchain-community>=0.0.1
 pandas>=2.0.0
 sentence-transformers>=2.2.2
 transformers>=4.30.0
+sentencepiece==0.2.0  # Required for LLaMA/Mistral tokenizers
 langchain-chroma>=0.1.0
 langsmith>=0.0.30
 python-dotenv>=1.0.0

@@ -90,24 +90,18 @@ class TestLocalModelGeneration:
                 return_full_text=True,
             )
 
-    def test_generate_local_fallback_on_error(self):
-        """Test _generate_local fallback to mock response on error."""
+    def test_generate_local_raises_on_error(self):
+        """_generate_local should raise on model loading error (no mock fallback)."""
         generator = StartupIdeaGenerator(model_name="local-test", use_local=True)
 
         # Mock transformers to raise an exception
         with patch(
             "transformers.pipeline", side_effect=Exception("Model loading failed")
         ):
-            result = generator._generate_local(
-                "Generate fintech startup ideas", max_new_tokens=100
-            )
-
-            # Should fallback to structured mock response
-            assert "MockTech-Fintech" in result
-            assert "Name:" in result
-            assert "Problem/Opportunity:" in result
-            assert "Solution:" in result
-            assert "Target Market:" in result
+            with pytest.raises(RuntimeError, match="Failed to load local model"):
+                _ = generator._generate_local(
+                    "Generate fintech startup ideas", max_new_tokens=100
+                )
 
     def test_mock_structured_response_format(self):
         """Test that mock structured response has correct format."""
@@ -247,27 +241,22 @@ class TestNumpyCompatibility:
 class TestGeneratorIntegration:
     """Integration tests for the complete generator workflow."""
 
-    def test_generate_with_local_model_fallback(self):
-        """Test complete generation workflow with local model fallback."""
+    def test_generate_raises_when_local_model_unavailable(self):
+        """Generator should surface errors when local model cannot load."""
         generator = StartupIdeaGenerator(model_name="local-test", use_local=True)
 
-        # Mock the transformers pipeline to fail, triggering fallback
+        # Mock the transformers pipeline to fail, triggering error
         with patch("transformers.pipeline", side_effect=Exception("Model failed")):
             # Mock market analyzer to avoid external dependencies
             generator.market_analyzer = Mock()
             generator.market_analyzer.analyze_startup_idea.return_value = None
 
-            result, market_insights = generator.generate(
-                num_ideas=1,
-                temperature=0.7,
-                include_market_analysis=False,  # Skip market analysis for this test
-            )
-
-            # Should get structured mock response
-            assert result is not None
-            assert "MockTech" in result
-            assert "Name:" in result
-            assert "Problem/Opportunity:" in result
+            with pytest.raises(RuntimeError, match="Failed to load local model"):
+                _ = generator.generate(
+                    num_ideas=1,
+                    temperature=0.7,
+                    include_market_analysis=False,
+                )
 
     def test_generate_handles_parsing_errors_gracefully(self):
         """Test that generator handles parsing errors gracefully."""

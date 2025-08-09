@@ -12,6 +12,14 @@ from rag_startups.cli import app
 runner = CliRunner()
 
 
+@pytest.fixture(autouse=True)
+def mock_model_info_autouse():
+    """Avoid real HF calls during CLI preflight by mocking model_info."""
+    with patch("rag_startups.cli.model_info") as mi:
+        mi.return_value = object()
+        yield mi
+
+
 @pytest.fixture
 def mock_market_insights():
     """Create mock market insights for testing."""

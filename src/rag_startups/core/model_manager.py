@@ -293,6 +293,12 @@ class ModelManager:
 
         try:
             response = requests.get(url, headers=headers, timeout=self.timeout)
+            # If token appears invalid (401), retry anonymously – public models should still pass
+            if response.status_code == 401 and "Authorization" in headers:
+                logger.warning(
+                    f"HuggingFace auth returned 401 for {config.name}; retrying without token"
+                )
+                response = requests.get(url, timeout=self.timeout)
             if response.status_code == 200:
                 model_info = response.json()
 

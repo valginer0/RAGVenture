@@ -168,7 +168,7 @@ def calculate_result(
     retriever: Any,
     json_data: list,
     prompt_messages: List[Tuple[str, str]],
-    model_name: str = "all-MiniLM-L6-v2",
+    language_model_name: Optional[str] = None,
     lookup: Optional[StartupLookup] = None,
     num_ideas: int = 3,
 ) -> str:
@@ -177,9 +177,9 @@ def calculate_result(
     if lookup is None:
         lookup = StartupLookup(json_data)
 
-    generator = pipeline(
-        "text-generation", model=_get_local_language_model(), pad_token_id=50256
-    )
+    # Choose language model: prefer provided selection, otherwise fallback
+    lm_name = language_model_name or _get_local_language_model()
+    generator = pipeline("text-generation", model=lm_name, pad_token_id=50256)
     prompt = ChatPromptTemplate.from_messages(prompt_messages)
     result = rag_chain_local(
         question, generator, prompt, retriever, lookup=lookup, num_ideas=num_ideas

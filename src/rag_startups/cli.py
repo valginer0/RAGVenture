@@ -6,7 +6,8 @@ from pathlib import Path
 from typing import Optional
 
 import typer
-from huggingface_hub import hf_hub_download
+from huggingface_hub import hf_hub_download, model_info
+from huggingface_hub.errors import HfHubHTTPError
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -41,6 +42,11 @@ def validate_token() -> str:
             "Please set it with your HuggingFace API token."
         )
         raise typer.Exit(1)
+    # Ensure the token is visible to settings/model manager in this process
+    os.environ["HUGGINGFACE_TOKEN"] = token
+    # Also set aliases used by huggingface_hub/transformers
+    os.environ.setdefault("HUGGINGFACE_HUB_TOKEN", token)
+    os.environ.setdefault("HF_TOKEN", token)
     return token
 
 
@@ -138,6 +144,21 @@ def generate_all(
     # Get the best available language model
     language_model = model_service.get_language_model()
     console.print(f"[blue]Using model:[/blue] {language_model.name}", style="dim")
+    # Minimal preflight: verify token can access model metadata (detect gated/unauthorized)
+    try:
+        _ = model_info(language_model.name, token=token)
+    except HfHubHTTPError as e:
+        status = getattr(e.response, "status_code", None)
+        if status in (401, 403):
+            console.print(
+                "[red]Authorization error:[/red] Your token cannot access the selected model.\n"
+                f"Model: {language_model.name}\n"
+                "Visit the model page on Hugging Face to request access, or use a token with access."
+            )
+            raise typer.Exit(1)
+    # Get the best available embedding model
+    embedding_model = model_service.get_embedding_model()
+    console.print(f"[blue]Using embeddings:[/blue] {embedding_model.name}", style="dim")
 
     question = (
         f"Find innovative startup ideas in {topic}"
@@ -166,7 +187,15 @@ def generate_all(
     with console.status("[bold green]Generating startup ideas..."):
         # Find startups in the file relevant to the topic
         example_startups = find_relevant_startups(
-            num_ideas, question, prompt_messages, print_examples, lookup, df, json_data
+            num_ideas,
+            question,
+            prompt_messages,
+            print_examples,
+            lookup,
+            df,
+            json_data,
+            embedding_model_name=embedding_model.name,
+            language_model_name=language_model.name,
         )
         example_startups_parsed = parse_ideas(example_startups)
 
@@ -187,12 +216,21 @@ def generate_all(
 
 
 def find_relevant_startups(
-    num_ideas, question, prompt_messages, print_examples, lookup, df, json_data
+    num_ideas,
+    question,
+    prompt_messages,
+    print_examples,
+    lookup,
+    df,
+    json_data,
+    *,
+    embedding_model_name: str,
+    language_model_name: str,
 ):
     """the code to find startups examples here"""
 
-    # Initialize embeddings and retriever once
-    retriever = initialize_embeddings(df)
+    # Initialize embeddings and retriever once using the selected embedding model
+    retriever = initialize_embeddings(df, model_name=embedding_model_name)
 
     # Pass retriever to calculate_result
     result = calculate_result(
@@ -202,6 +240,7 @@ def find_relevant_startups(
         prompt_messages=prompt_messages,
         lookup=lookup,
         num_ideas=num_ideas,
+        language_model_name=language_model_name,
     )
 
     # Print the results in a nicely formatted way
