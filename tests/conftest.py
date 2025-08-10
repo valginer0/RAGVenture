@@ -75,6 +75,46 @@ def _mock_initialize_embeddings(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _mock_calculate_result(monkeypatch):
+    """Bypass transformers usage inside embed_master.calculate_result during CLI tests.
+
+    The real calculate_result constructs a transformers.pipeline and can trigger
+    model downloads. We replace it with a lightweight function returning a
+    deterministic string to keep CLI tests fully offline/deterministic.
+    """
+
+    def _fake_calculate_result(
+        *,
+        question: str,
+        retriever,
+        json_data,
+        prompt_messages,
+        lookup=None,
+        num_ideas=1,
+        language_model_name: str | None = None,
+    ) -> str:
+        return (
+            "Here are the most relevant startup ideas from YC companies:\n"
+            "==================================================\n"
+            "Startup Idea #1:\n"
+            "Company: TestCo\n\n"
+            "PROBLEM/OPPORTUNITY:\nTest problem.\n\n"
+            "SOLUTION:\nTest solution.\n\n"
+            "TARGET MARKET:\nTest market.\n\n"
+            "UNIQUE VALUE:\nTest value."
+        )
+
+    for target in (
+        "rag_startups.embed_master.calculate_result",
+        "src.rag_startups.embed_master.calculate_result",
+    ):
+        try:
+            monkeypatch.setattr(target, _fake_calculate_result, raising=True)
+        except Exception:
+            pass
+
+
+@pytest.fixture(autouse=True)
 def _mock_transformers_pipeline(monkeypatch):
     """Mock transformers.pipeline to avoid real model loads (e.g., Mistral, gpt2).
 
@@ -107,6 +147,9 @@ def _mock_transformers_pipeline(monkeypatch):
         # Common in-package uses
         "rag_startups.core.rag_chain.pipeline",
         "src.rag_startups.core.rag_chain.pipeline",
+        # embed_master-bound import used by CLI calculate_result
+        "rag_startups.embed_master.pipeline",
+        "src.rag_startups.embed_master.pipeline",
         "rag_startups.cli.pipeline",
         "src.rag_startups.cli.pipeline",
         # Tests may import directly
