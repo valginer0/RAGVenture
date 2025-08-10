@@ -119,6 +119,45 @@ def _mock_transformers_pipeline(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _mock_hf_inference_client(monkeypatch):
+    """Mock huggingface_hub.InferenceClient to avoid network/API usage in CLI tests."""
+
+    class _FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def text_generation(
+            self,
+            prompt: str,
+            model: str | None = None,
+            max_new_tokens: int = 256,
+            temperature: float = 0.7,
+            repetition_penalty: float = 1.1,
+            return_full_text: bool = True,
+            **kwargs,
+        ) -> str:
+            # Return a minimal plausible response string
+            return (
+                "Startup Idea:\n"
+                "Name: TestStartup\n"
+                "Problem/Opportunity: Test problem\n"
+                "Solution: Test solution\n"
+                "Target Market: Test market\n"
+                "Unique Value: Test value\n"
+            )
+
+    for target in (
+        "huggingface_hub.InferenceClient",
+        "rag_startups.idea_generator.generator.InferenceClient",
+        "src.rag_startups.idea_generator.generator.InferenceClient",
+    ):
+        try:
+            monkeypatch.setattr(target, _FakeClient, raising=True)
+        except Exception:
+            pass
+
+
+@pytest.fixture(autouse=True)
 def _mock_vectorstore_and_retriever(monkeypatch):
     """Patch vectorstore creation and retriever to deterministic in-memory fakes.
 
