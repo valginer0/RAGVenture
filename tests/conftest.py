@@ -48,10 +48,16 @@ def _mock_initialize_embeddings(monkeypatch):
             ]
 
     # Replace initialize_embeddings with a function returning our fake retriever
-    # Cover both possible import paths in CI/local: "rag_startups..." and "src.rag_startups..."
+    # Cover both possible import paths in CI/local and both module-level and CLI-imported symbol:
     for target in (
+        # module-level function
         "rag_startups.embed_master.initialize_embeddings",
         "src.rag_startups.embed_master.initialize_embeddings",
+        # cli imported symbol (from .embed_master import initialize_embeddings)
+        "rag_startups.cli.initialize_embeddings",
+        "src.rag_startups.cli.initialize_embeddings",
+        # legacy script path if referenced in any test
+        "rag_startup_ideas.initialize_embeddings",
     ):
         try:
             monkeypatch.setattr(
