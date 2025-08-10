@@ -15,10 +15,16 @@ def _mock_hf_model_info_autouse():
 
 @pytest.fixture(autouse=True)
 def _ensure_hf_token_env(monkeypatch):
-    """Ensure HF token env vars exist so RAGSettings validation passes in CI."""
+    """Ensure HF token env vars exist so RAGSettings validation passes in CI.
+
+    Also force offline behavior to avoid any accidental network calls during tests.
+    """
     monkeypatch.setenv("HUGGINGFACE_TOKEN", "test_token")
     monkeypatch.setenv("HUGGINGFACE_HUB_TOKEN", "test_token")
     monkeypatch.setenv("HF_TOKEN", "test_token")
+    # Encourage libraries to run offline
+    monkeypatch.setenv("HUGGINGFACE_HUB_OFFLINE", "1")
+    monkeypatch.setenv("TRANSFORMERS_OFFLINE", "1")
 
 
 @pytest.fixture(autouse=True)
@@ -42,11 +48,20 @@ def _mock_initialize_embeddings(monkeypatch):
             ]
 
     # Replace initialize_embeddings with a function returning our fake retriever
-    monkeypatch.setattr(
+    # Cover both possible import paths in CI/local: "rag_startups..." and "src.rag_startups..."
+    for target in (
         "rag_startups.embed_master.initialize_embeddings",
-        lambda df, model_name="all-MiniLM-L6-v2": _FakeRetriever(),
-        raising=True,
-    )
+        "src.rag_startups.embed_master.initialize_embeddings",
+    ):
+        try:
+            monkeypatch.setattr(
+                target,
+                lambda df, model_name="all-MiniLM-L6-v2": _FakeRetriever(),
+                raising=True,
+            )
+        except Exception:
+            # If a path doesn't exist in the current environment, ignore
+            pass
 
 
 @pytest.fixture(autouse=True)
