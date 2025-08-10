@@ -5,9 +5,26 @@ Tests for the StartupIdeaGenerator class.
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
+import backoff
 import pytest
 
 from rag_startups.idea_generator.generator import RateLimitError, StartupIdeaGenerator
+
+
+@pytest.fixture(autouse=True)
+def _disable_backoff_sleep(monkeypatch):
+    """Make backoff retries fast by removing sleep."""
+    # backoff uses internal _sleep hook; make it a no-op
+    monkeypatch.setattr(backoff, "_sleep", lambda details: None, raising=False)
+    # Also disable time.sleep to avoid any residual waits
+    monkeypatch.setattr("time.sleep", lambda s: None)
+    # Unwrap the backoff decorator entirely to avoid multiple retries
+    import rag_startups.idea_generator.generator as gen_mod
+
+    gen_fn = gen_mod.StartupIdeaGenerator.generate
+    wrapped = getattr(gen_fn, "__wrapped__", None)
+    if wrapped is not None:
+        monkeypatch.setattr(gen_mod.StartupIdeaGenerator, "generate", wrapped)
 
 
 @pytest.fixture

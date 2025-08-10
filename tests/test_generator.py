@@ -2,10 +2,26 @@
 
 from unittest.mock import patch
 
+import backoff
 import pytest
 
 from rag_startups.analysis.market_analyzer import MarketInsights
 from rag_startups.idea_generator.generator import RateLimitError, StartupIdeaGenerator
+
+
+@pytest.fixture(autouse=True)
+def _disable_backoff_sleep(monkeypatch):
+    """Make backoff retries fast by removing sleep."""
+    monkeypatch.setattr(backoff, "_sleep", lambda details: None, raising=False)
+    # Avoid any real sleeps in code under test
+    monkeypatch.setattr("time.sleep", lambda s: None)
+    # Unwrap backoff-decorated generate to avoid repeated retries
+    import rag_startups.idea_generator.generator as gen_mod
+
+    gen_fn = gen_mod.StartupIdeaGenerator.generate
+    wrapped = getattr(gen_fn, "__wrapped__", None)
+    if wrapped is not None:
+        monkeypatch.setattr(gen_mod.StartupIdeaGenerator, "generate", wrapped)
 
 
 @pytest.fixture

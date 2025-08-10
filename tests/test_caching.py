@@ -35,14 +35,18 @@ def test_fakeredis_basic():
     assert call_count == 1  # Should not have called function again
 
 
-def test_ttl_cache_fallback():
-    """Test fallback to TTLCache when Redis is unavailable."""
-    # Force Redis to be unavailable
+def test_ttl_cache_fallback(monkeypatch):
+    """Test fallback to TTLCache when Redis is unavailable, fast."""
+    # Force TTLCache path and avoid any network wait
     os.environ["REDIS_HOST"] = "nonexistent_host"
+    monkeypatch.setattr(
+        "rag_startups.utils.caching.get_redis_client", lambda: None, raising=True
+    )
 
     call_count = 0
 
-    @cache_result(ttl_seconds=1)
+    # Use a tiny TTL so the test completes quickly
+    @cache_result(ttl_seconds=0.01)
     def sample_function(x):
         nonlocal call_count
         call_count += 1
@@ -58,8 +62,8 @@ def test_ttl_cache_fallback():
     assert result2 == 10
     assert call_count == 1  # Should not have called function again
 
-    # Wait for TTL to expire
-    time.sleep(1.1)
+    # Wait briefly for TTL to expire (no long sleep)
+    time.sleep(0.02)
 
     # Should recompute after TTL expires
     result3 = sample_function(5)
