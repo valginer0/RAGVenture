@@ -75,6 +75,50 @@ def _mock_initialize_embeddings(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _mock_transformers_pipeline(monkeypatch):
+    """Mock transformers.pipeline to avoid real model loads (e.g., Mistral, gpt2).
+
+    Returns a callable pipeline that yields a minimal, deterministic text-generation
+    structure compatible with callers that expect Hugging Face pipeline output.
+    """
+
+    class _FakePipeline:
+        def __call__(
+            self,
+            prompt,
+            max_new_tokens: int = 64,
+            do_sample: bool = False,
+            temperature: float = 0.7,
+            **kwargs,
+        ):
+            return [
+                {
+                    "generated_text": (
+                        "AI startup idea: Mobile AI assistant for healthcare."
+                    )
+                }
+            ]
+
+    def _fake_pipeline(task: str, model: str | None = None, **kwargs):
+        return _FakePipeline()
+
+    for target in (
+        "transformers.pipeline",
+        # Common in-package uses
+        "rag_startups.core.rag_chain.pipeline",
+        "src.rag_startups.core.rag_chain.pipeline",
+        "rag_startups.cli.pipeline",
+        "src.rag_startups.cli.pipeline",
+        # Tests may import directly
+        "tests.test_rag_chain.pipeline",
+    ):
+        try:
+            monkeypatch.setattr(target, _fake_pipeline, raising=True)
+        except Exception:
+            pass
+
+
+@pytest.fixture(autouse=True)
 def _mock_vectorstore_and_retriever(monkeypatch):
     """Patch vectorstore creation and retriever to deterministic in-memory fakes.
 
