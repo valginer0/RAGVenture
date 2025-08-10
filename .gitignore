@@ -204,3 +204,15 @@ cython_debug/
 .wslconfig
 adjust_timeout.reg
 .chroma/
+
+# Temporary profiling scripts and timing outputs
+/parse_top50.py
+/parse_junit_times.py
+/tests_durations_top50_precise.txt
+
+# Local JUnit/pytest timing reports (do not version control)
+junit.xml
+junit-*.xml
+pytest-report.xml
+test-results/
+reports/
