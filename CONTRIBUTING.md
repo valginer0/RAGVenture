@@ -28,9 +28,14 @@ By participating in this project, you are expected to uphold our Code of Conduct
 
    # Install dependencies with development extras
    pip install -r requirements.txt
-
-   # Install pre-commit hooks
    pre-commit install
+
+   # Preferred workflow
+   pre-commit run -a
+   python -m pytest -vv
+
+   # One-step sanitized push from Windows/WSL (no semicolons in message):
+   wsl -d Ubuntu -- bash -lc "set -e; cd /home/val/projects/rag_startups; git add -A; git commit -m 'concise update message'; git push -v origin HEAD:main"
    ```
 
 ## Development Process
@@ -47,8 +52,15 @@ By participating in this project, you are expected to uphold our Code of Conduct
    - Add examples to docs/examples.md
    - Update API documentation in docs/api.md
 
-3. **Testing** (177 tests - all passing)
-   - Run full test suite: `python -m pytest tests/ -v`
+3. **Testing** (178 tests - all passing, offline by default)
+   - Run pre-commit first, then pytest:
+     - `pre-commit run -a`
+     - `python -m pytest tests/ -v`
+   - Tests are fully offline and deterministic:
+     - Network is blocked by default via fixture `_block_network_requests`
+     - Offline env: `HUGGINGFACE_HUB_OFFLINE=1`, `TRANSFORMERS_OFFLINE=1`
+     - Mocks for `huggingface_hub.model_info`, `transformers.pipeline`, `huggingface_hub.InferenceClient`, and `rag_startups.embed_master.calculate_result`
+     - To intentionally allow network for a test, use `@pytest.mark.allow_network`
    - Docker tests: `docker-compose run --rm app-cpu python -m pytest tests/ -v`
    - All tests must pass before submitting PR
    - Add tests for new features and bug fixes
@@ -60,13 +72,7 @@ By participating in this project, you are expected to uphold our Code of Conduct
    - Verify Docker compatibility before submitting PR
    - All Docker runtime issues have been resolved
 
-5. **Original Testing Guidelines**
-   - Write tests for new features
-   - Ensure all tests pass: `python -m pytest`
-   - Add test cases for edge cases
-   - Maintain test coverage
-
-4. **Commit Guidelines**
+5. **Commit Guidelines**
    - Use clear, descriptive commit messages
    - Follow conventional commits format:
      - feat: new feature
@@ -79,24 +85,26 @@ By participating in this project, you are expected to uphold our Code of Conduct
 
 ## Testing
 
-We maintain a comprehensive test suite with 31 passing tests. Before submitting your PR:
+We maintain a comprehensive, offline test suite. Before submitting your PR:
 
-1. Run the full test suite:
+1. Run the full test suite (after pre-commit):
    ```bash
-   pytest tests/
+   pre-commit run -a
+   python -m pytest -vv
    ```
 
 2. Ensure test coverage:
    ```bash
-   pytest --cov=rag_startups tests/
+   pre-commit run -a
+   python -m pytest --cov=rag_startups -vv
    ```
 
-3. Key test files:
+3. Key test files (selection):
    - `tests/test_rag_chain.py`: Core RAG functionality
    - `tests/idea_generator/test_generator.py`: Idea generation
    - `tests/test_data_loader.py`: Data loading and processing
 
-4. Performance benchmarks (tests will fail if exceeded):
+4. Performance benchmarks (informational):
    - Data Loading: < 0.1s
    - Embedding Generation: < 25s
    - Idea Generation: < 1s per idea

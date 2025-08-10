@@ -176,8 +176,23 @@ pre-commit install  # Sets up automatic code formatting
 
 3. Run tests:
 ```bash
-pytest tests/  # Should show 177 passing tests
+pytest tests/  # Should show 178 passing tests
 ```
+
+### Testing & Offline Policy
+
+This project enforces fully offline, deterministic tests:
+
+- Tests block outbound HTTP(S) by default via an autouse fixture in `tests/conftest.py` that patches `requests.sessions.Session.request`.
+- Autouse fixtures also mock model-loading/network paths:
+  - `huggingface_hub.model_info` in `rag_startups/cli.py` preflight
+  - `transformers.pipeline` at all call sites (e.g., `rag_startups.embed_master`, `rag_startups.core.rag_chain`, CLI)
+  - `huggingface_hub.InferenceClient` and the bound imports used by `rag_startups/idea_generator/generator.py`
+  - `rag_startups.embed_master.calculate_result` is replaced with a deterministic helper during tests
+- Offline env vars are forced: `HUGGINGFACE_HUB_OFFLINE=1`, `TRANSFORMERS_OFFLINE=1`.
+- To explicitly allow network in a specific test, add the marker: `@pytest.mark.allow_network`.
+
+Runtime (non-test) CLI runs are allowed to use the network and will honor your `.env`.
 
 ## Data Requirements
 

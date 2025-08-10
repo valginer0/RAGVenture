@@ -24,6 +24,22 @@ python -m src.rag_startups.cli generate-all "AI" --file "custom_startups.json"
 python -m src.rag_startups.cli generate-all "Blockchain" --print-examples
 ```
 
+### CLI Auth & Preflight
+
+- Runtime CLI reads `HUGGINGFACE_TOKEN` from your environment (e.g., via `.env` if your shell loads it).
+- The CLI performs a preflight check using `huggingface_hub.model_info`.
+  - If the selected model is gated and your token lacks access, the CLI exits early with a clear 401/403 message.
+  - Public models proceed even if the token is invalid or absent.
+- No extra export steps are required if your environment loader already applies `.env`.
+
+### Offline Testing Notes
+
+- Tests are fully offline and deterministic:
+  - Outbound HTTP(S) is blocked by default via an autouse fixture (`_block_network_requests`).
+  - Critical model/network paths are mocked (e.g., `transformers.pipeline`, `huggingface_hub.InferenceClient`, and `rag_startups.embed_master.calculate_result`).
+  - Offline env vars are enforced during tests: `HUGGINGFACE_HUB_OFFLINE=1`, `TRANSFORMERS_OFFLINE=1`.
+- To intentionally allow network in a specific test, mark it with `@pytest.mark.allow_network`.
+
 Expected output format:
 ```
 ╭─────────────────────────── Generated Startup Idea ───────────────────────────╮
