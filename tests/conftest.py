@@ -4,6 +4,31 @@ import pytest
 
 
 @pytest.fixture(autouse=True)
+def _block_network_requests(monkeypatch, request):
+    """Deny outbound HTTP(S) during tests to guarantee offline determinism.
+
+    Opt-out: mark a test with @pytest.mark.allow_network to re-enable network.
+    """
+
+    if request.node.get_closest_marker("allow_network"):
+        return
+
+    try:
+        # Block all requests via requests' Session.request
+        def _blocked_request(*args, **kwargs):  # pragma: no cover - simple guard
+            raise RuntimeError(
+                "Network access disabled during tests. Use @pytest.mark.allow_network to opt-out."
+            )
+
+        monkeypatch.setattr(
+            "requests.sessions.Session.request", _blocked_request, raising=True
+        )
+    except Exception:
+        # requests may not be imported in some environments; ignore
+        pass
+
+
+@pytest.fixture(autouse=True)
 def _mock_hf_model_info_autouse():
     """Mock huggingface_hub.model_info used by CLI preflight to avoid network/auth.
     Applies to all tests importing rag_startups.cli.
