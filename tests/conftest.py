@@ -47,3 +47,36 @@ def _mock_initialize_embeddings(monkeypatch):
         lambda df, model_name="all-MiniLM-L6-v2": _FakeRetriever(),
         raising=True,
     )
+
+
+@pytest.fixture(autouse=True)
+def _mock_sentence_transformer(monkeypatch):
+    """Mock SentenceTransformer to avoid any HF network/auth in tests.
+
+    Many tests import paths that instantiate SentenceTransformer directly
+    (e.g., in rag chain utilities). Replacing it with a simple fake ensures
+    no downloads and prevents 401 Unauthorized in CI when an invalid token
+    is present.
+    """
+
+    class _FakeST:
+        def __init__(self, model_name: str = "all-MiniLM-L6-v2", **kwargs):
+            self.model_name = model_name
+
+        def encode(self, sentences, **kwargs):
+            # Return deterministic vectors with expected dimensionality (384)
+            import numpy as np
+
+            if isinstance(sentences, str):
+                rng = np.random.default_rng(42)
+                return rng.random(384, dtype=float)
+            else:
+                n = len(sentences)
+                rng = np.random.default_rng(42)
+                return rng.random((n, 384), dtype=float)
+
+    monkeypatch.setattr(
+        "sentence_transformers.SentenceTransformer",
+        _FakeST,
+        raising=True,
+    )
