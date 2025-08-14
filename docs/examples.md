@@ -24,6 +24,27 @@ python -m src.rag_startups.cli generate-all "AI" --file "custom_startups.json"
 python -m src.rag_startups.cli generate-all "Blockchain" --print-examples
 ```
 
+## Run via Docker (GHCR)
+
+If you prefer containers, you can run the CLI from a prebuilt image (if available) or build locally.
+
+### Pull (if available)
+
+```bash
+docker pull ghcr.io/valginer0/rag_startups:0.9.2
+```
+
+### Run with your .env
+
+```bash
+docker run --rm -it \
+  --env-file .env \
+  ghcr.io/valginer0/rag_startups:0.9.2 \
+  python -m src.rag_startups.cli generate-all "AI" --num-ideas 2
+```
+
+Tip: For offline/deterministic runs, set `HUGGINGFACE_HUB_OFFLINE=1` and `TRANSFORMERS_OFFLINE=1` in your `.env`.
+
 ### CLI Auth & Preflight
 
 - Runtime CLI reads `HUGGINGFACE_TOKEN` from your environment (e.g., via `.env` if your shell loads it).

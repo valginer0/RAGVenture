@@ -158,6 +158,47 @@ docker-compose run --rm app-cpu python -m rag_startups.cli generate-all fintech 
 
 **Docker Status**: ✅ **Production Ready** - All runtime issues resolved, works end-to-end with real data.
 
+### Run from GitHub Container Registry (GHCR)
+
+If you prefer pulling a prebuilt image from GHCR:
+
+1) Login to GHCR (needs a GitHub token). Replace USERNAME/TOKEN accordingly.
+
+```bash
+echo "$GITHUB_TOKEN" | docker login ghcr.io -u <USERNAME> --password-stdin
+# or
+echo "<TOKEN>" | docker login ghcr.io -u <USERNAME> --password-stdin
+```
+
+2) Pull the image:
+
+```bash
+docker pull ghcr.io/valginer0/rag_startups:0.9.2
+# or latest if available
+docker pull ghcr.io/valginer0/rag_startups:latest
+```
+
+3) Run the CLI (using your local .env for tokens/settings):
+
+```bash
+docker run --rm -it \
+  --env-file .env \
+  ghcr.io/valginer0/rag_startups:0.9.2 \
+  python -m rag_startups.cli generate-all "AI" --num-ideas 2
+```
+
+Tip: For offline/deterministic runs, set `HUGGINGFACE_HUB_OFFLINE=1` and `TRANSFORMERS_OFFLINE=1` in your `.env`.
+
+Maintainers – Publish to GHCR:
+
+```bash
+# After building locally (e.g., docker build -t ghcr.io/valginer0/rag_startups:dev .)
+docker tag ghcr.io/valginer0/rag_startups:dev ghcr.io/valginer0/rag_startups:0.9.2
+docker push ghcr.io/valginer0/rag_startups:0.9.2
+docker tag ghcr.io/valginer0/rag_startups:0.9.2 ghcr.io/valginer0/rag_startups:latest
+docker push ghcr.io/valginer0/rag_startups:latest
+```
+
 ## Development Setup
 
 1. Clone and setup:
