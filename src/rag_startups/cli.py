@@ -7,7 +7,7 @@ from typing import Optional
 
 import typer
 from huggingface_hub import hf_hub_download, model_info
-from huggingface_hub.errors import HfHubHTTPError
+from huggingface_hub.utils import HfHubHTTPError
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
