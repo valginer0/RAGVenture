@@ -1,6 +1,6 @@
 # RAG Startups – Architecture & Documentation Review (2025-07-31)
 
-> Prepared by Cascade – automatic architectural review based on current codebase, documentation and `ROADMAP.md`.
+> Prepared  based on current codebase, documentation and `ROADMAP.md`.
 
 ---
 
@@ -27,14 +27,14 @@ Key gaps remain around performance optimisation, observability, public interface
 
 ## 3. Weaknesses / Improvement Opportunities
 
-| # | Area | Issue | Impact |
-|---|------|-------|--------|
-| W1 | **Performance & scaling** | Cache invalidation logic naive; blocking I/O in RAG pipeline; no async; memory usage not instrumented | Slow throughput, higher infra cost |
-| W2 | **Error handling & resilience** | Ad-hoc try/except, no typed error hierarchy; limited retries/back-off; no circuit-breaker | Harder debuggability, transient-failure cascades |
-| W3 | **Observability** | Logging not structured; no correlation IDs; missing metrics & health checks | Harder ops & SRE integration |
-| W4 | **Public interfaces** | No REST API or Web UI; CLI only; users need programmatic access | Limits adoption & integration |
-| W5 | **Security & compliance** | AuthN/Z absent; no dependency scan; data encryption not enforced | Blocks enterprise rollout |
-| W6 | **Documentation depth** | API docs, ADRs, operations runbooks missing; onboarding friction for new devs | Knowledge silos |
+| # | Area | Status | Issue | Impact |
+|---|------|--------|-------|--------|
+| W1 | **Performance & scaling** | <font color="orange">Partially Fixed</font> | Caching layer implemented, but I/O is still blocking and async support is pending. | Slow throughput, higher infra cost |
+| W2 | **Error handling & resilience** | <font color="green">Fixed</font> | Custom exception hierarchy, retries with backoff, and a model manager acting as a circuit breaker are now implemented. | Harder debuggability, transient-failure cascades |
+| W3 | **Observability** | <font color="red">Open</font> | Logging is not structured, and no metrics or tracing are implemented. | Harder ops & SRE integration |
+| W4 | **Public interfaces** | <font color="red">Open</font> | No REST API or Web UI has been developed. | Limits adoption & integration |
+| W5 | **Security & compliance** | <font color="red">Open</font> | No authentication or dependency scanning is implemented. | Blocks enterprise rollout |
+| W6 | **Documentation depth** | <font color="orange">Partially Fixed</font> | API documentation is now auto-generated, but ADRs are still missing. | Knowledge silos |
 | W7 | **Test coverage gaps** | 63 % coverage – lower on new modules (e.g., config migrator, CLI UX) | Hidden bugs risk |
 | W8 | **CI/CD maturity** | Build pipeline exists but no automated deployments, blue-green, or rollback | Release velocity & reliability |
 
