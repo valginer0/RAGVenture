@@ -1,10 +1,11 @@
 # Core dependencies
-numpy<2.0.0  # Pin to 1.x for sentence-transformers compatibility
+numpy<2.0.0
+torch==2.1.2
+transformers==4.36.2
+sentence-transformers==2.2.2
 langchain>=0.1.0
 langchain-community>=0.0.1
 pandas>=2.0.0
-sentence-transformers>=2.2.2
-transformers>=4.30.0
 sentencepiece==0.2.0  # Required for LLaMA/Mistral tokenizers
 langchain-chroma>=0.1.0
 langsmith>=0.0.30
